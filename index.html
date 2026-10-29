@@ -110,7 +110,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body><div id="auth-loading"><div style="text-align:center"><div class="spinner"></div><div style="margin-top:10px">Verificando acesso...</div></div></div><section id="login-screen"><form id="login-form" class="login-card"><div class="login-logo"><strong>👑 CRICORREA</strong><span>ACESSO AO SISTEMA</span></div><div class="form-group"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div><div class="form-group"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6"></div><div id="login-error" class="login-msg login-error"></div><div id="login-success" class="login-msg login-success"></div><button id="login-button" type="submit" class="btn btn-primary">🔐 Entrar</button><button id="reset-button" type="button" class="btn btn-outline">Esqueci minha senha</button><div style="font-size:.75rem;color:#64748b;text-align:center;margin-top:9px">Somente usuários criados no Firebase podem acessar.</div></form></section>
-  <div class="container" id="app-content"><div class="user-bar"><span>Conectado: <strong id="logged-user"></strong><br><small id="sync-status">☁️ Aguardando sincronização</small></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
+  <div class="container" id="app-content"><div class="user-bar"><span>Conectado: <strong id="logged-user"></strong></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
     <div class="top-nav">
       <button type="button" class="nav-btn active" id="btn-nav-editor" onclick="switchTab('editor')">➕ Novo Orçamento</button>
       <button type="button" class="nav-btn" id="btn-nav-history" onclick="switchTab('history')">🔍 Histórico</button>
@@ -154,7 +154,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button" class="btn btn-secondary">+ Adicionar à Lista</button>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão de correção 3</div>
       </div>
 
       <div class="card">
@@ -232,10 +232,18 @@
 
     function saveHistory() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(budgetHistory));
-      autoCloudBackup();
-      if(window.cricorreaCloud&&currentBudget?.id)window.cricorreaCloud.saveBudget(currentBudget).catch(showCloudError);
+
+      autoCloudBackup();    }
+
+    function nextBudgetId() {
+      const year = new Date().getFullYear();
+      let highest = 0;
+      budgetHistory.forEach(budget => {
+        const match = String(budget.id || '').match(/^ORD-(\d{4})-(\d+)$/);
+        if (match && Number(match[1]) === year) highest = Math.max(highest, Number(match[2]));
+      });
+      return `ORD-${year}-${String(highest + 1).padStart(3, '0')}`;
     }
-    function showCloudError(e){console.error(e);const x=document.getElementById('sync-status');if(x)x.textContent='⚠️ Erro de sincronização';}
 
     function createEmptyBudget() {
       return { id: nextBudgetId(), date: new Date().toLocaleDateString('pt-BR'), client: '', phone: '', address: '', items: [], travel: 0, paid: 0, paidMethod: 'Pix', paymentStatus: 'Pendente' };
@@ -256,21 +264,29 @@
       document.getElementById('item-desc').focus();
     }
 
-    function addItem(){
-      try {
-        const descEl=document.getElementById('item-desc'),categoryEl=document.getElementById('item-category'),typeEl=document.getElementById('item-type'),qtyEl=document.getElementById('item-qty'),costEl=document.getElementById('item-cost'),giftEl=document.getElementById('item-cortesia'),priceEl=document.getElementById('item-price'),editEl=document.getElementById('editing-item-index');
-        const desc=descEl.value.trim(),category=categoryEl.value,type=typeEl.value,qty=num(qtyEl.value),cost=num(costEl.value),gift=giftEl.checked,price=gift?0:num(priceEl.value),idx=Number(editEl.value);
-        if(!desc){alert('Digite a descrição do serviço ou material.');descEl.focus();return;}
-        if(qty<=0){alert('Informe uma quantidade maior que zero.');qtyEl.focus();return;}
-        const item={type,category,desc,qty,cost,price,isCortesia:gift};
-        if(!currentBudget||!Array.isArray(currentBudget.items))currentBudget=createEmptyBudget();
-        if(idx>=0&&idx<currentBudget.items.length)currentBudget.items[idx]=item;else currentBudget.items.push(item);
-        resetItemForm();renderItems();
-      } catch(error) {
-        console.error('Falha ao adicionar item:',error);
-        alert('Não foi possível adicionar o item. Atualize a página e tente novamente. Detalhe: '+(error.message||error));
-      }
+    function forceAddItem(event){
+      if(event){event.preventDefault();event.stopPropagation();}
+      try{
+        const get=id=>document.getElementById(id);
+        const desc=(get('item-desc')?.value||'').trim();
+        const qty=Number(String(get('item-qty')?.value||'1').replace(',','.'))||0;
+        const cost=Number(String(get('item-cost')?.value||'0').replace(',','.'))||0;
+        const price=Number(String(get('item-price')?.value||'0').replace(',','.'))||0;
+        if(!desc){alert('Digite a descrição do serviço ou material.');get('item-desc')?.focus();return false;}
+        if(qty<=0){alert('Informe uma quantidade maior que zero.');get('item-qty')?.focus();return false;}
+        if(typeof currentBudget!=='object'||currentBudget===null)currentBudget=createEmptyBudget();
+        if(!Array.isArray(currentBudget.items))currentBudget.items=[];
+        const idx=parseInt(get('editing-item-index')?.value??'-1',10);
+        const item={type:get('item-type')?.value||'Serviço',category:get('item-category')?.value||'Outros',desc,qty,cost,price:get('item-cortesia')?.checked?0:price,isCortesia:!!get('item-cortesia')?.checked};
+        if(Number.isInteger(idx)&&idx>=0&&idx<currentBudget.items.length)currentBudget.items[idx]=item;else currentBudget.items.push(item);
+        if(typeof resetItemForm==='function')resetItemForm();
+        if(typeof renderItems==='function')renderItems();
+        const count=get('items-count');if(count)count.textContent=currentBudget.items.length+' itens';
+        return false;
+      }catch(error){console.error(error);alert('Erro ao adicionar: '+(error.message||error));return false;}
     }
+    function addItem(){
+      const desc=document.getElementById('item-desc').value.trim(),category=document.getElementById('item-category').value,type=document.getElementById('item-type').value,qty=num(document.getElementById('item-qty').value),cost=num(document.getElementById('item-cost').value),gift=document.getElementById('item-cortesia').checked,price=gift?0:num(document.getElementById('item-price').value),idx=Number(document.getElementById('editing-item-index').value);if(!desc)return alert('Digite a descrição.');if(qty<=0)return alert('Informe uma quantidade válida.');const item={type,category,desc,qty,cost,price,isCortesia:gift};if(idx>=0)currentBudget.items[idx]=item;else currentBudget.items.push(item);resetItemForm();renderItems();}
     function resetItemForm(){document.getElementById('item-desc').value='';document.getElementById('item-price').value='';document.getElementById('item-cost').value='';document.getElementById('item-qty').value='1';document.getElementById('item-cortesia').checked=false;document.getElementById('editing-item-index').value='-1';selectItemType('Serviço');}
     function editItem(i){const x=currentBudget.items[i];selectItemType(x.type||'Serviço');document.getElementById('item-category').value=x.category;document.getElementById('item-desc').value=x.desc;document.getElementById('item-qty').value=x.qty;document.getElementById('item-cost').value=num(x.cost);document.getElementById('item-price').value=num(x.price);document.getElementById('item-cortesia').checked=!!x.isCortesia;document.getElementById('editing-item-index').value=i;document.getElementById('item-entry-card').scrollIntoView({behavior:'smooth'});}
     function removeItem(index) {
@@ -343,10 +359,10 @@
     }
     function savePixSettings(){
       pixSettings={key:document.getElementById('pix-key').value.trim(),holder:document.getElementById('pix-holder').value.trim()||'CRICORREA'};
-      localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));if(window.cricorreaCloud)window.cricorreaCloud.savePix(pixSettings).catch(showCloudError);
+      localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));
     }
     function loadPixSettings(){document.getElementById('pix-key').value=pixSettings.key||'51157076000166';document.getElementById('pix-holder').value=pixSettings.holder||'CRICORREA';}
-    function restoreDefaultPix(){pixSettings={key:'51157076000166',holder:'CRICORREA'};localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));if(window.cricorreaCloud)window.cricorreaCloud.savePix(pixSettings).catch(showCloudError);loadPixSettings();alert('PIX padrão restaurado: CNPJ 51.157.076/0001-66.');}
+    function restoreDefaultPix(){pixSettings={key:'51157076000166',holder:'CRICORREA'};localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));loadPixSettings();alert('PIX padrão restaurado: CNPJ 51.157.076/0001-66.');}
     function syncFormToBudget() {
       currentBudget.client = document.getElementById('client-name').value.trim();
       currentBudget.phone = document.getElementById('client-phone').value.trim();
@@ -385,7 +401,6 @@
     function newBudget() {
       currentBudget = createEmptyBudget();
       fillForm();
-    document.getElementById('add-item-button').addEventListener('click', addItem);
       switchTab('editor');
     }
 
@@ -399,7 +414,7 @@
     function deleteBudget(id) {
       if (!confirm(`Excluir definitivamente o orçamento ${id}?`)) return;
       budgetHistory = budgetHistory.filter(b => b.id !== id);
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(budgetHistory));if(window.cricorreaCloud)window.cricorreaCloud.deleteBudget(id).catch(showCloudError);autoCloudBackup();renderHistory();
+      saveHistory(); renderHistory();
       if (currentBudget.id === id) newBudget();
     }
 
@@ -611,8 +626,8 @@
     function setPeriod(p){dashboardPeriod=p;['day','week','month','year'].forEach(x=>document.getElementById('period-'+x).classList.toggle('active',x===p));renderDashboard();}
     function inPeriod(v,a,b){const d=parsePtDate(v);return d&&d>=a&&d<=b;}
     function budgetValue(b){return (b.items||[]).reduce((s,x)=>s+num(x.qty)*num(x.price),0)+num(b.travel);}
-    function addExpense(){const desc=document.getElementById('expense-desc').value.trim(),value=num(document.getElementById('expense-value').value);if(!desc||value<=0)return alert('Informe descrição e valor.');const expense={id:Date.now(),desc,category:document.getElementById('expense-category').value,date:document.getElementById('expense-date').value,value};expenses.unshift(expense);localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));if(window.cricorreaCloud)window.cricorreaCloud.saveExpense(expense).catch(showCloudError);autoCloudBackup();document.getElementById('expense-desc').value='';document.getElementById('expense-value').value='';renderDashboard();}
-    function deleteExpense(id){if(confirm('Excluir este gasto?')){expenses=expenses.filter(x=>x.id!==id);localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));if(window.cricorreaCloud)window.cricorreaCloud.deleteExpense(id).catch(showCloudError);autoCloudBackup();renderDashboard();}}
+    function addExpense(){const desc=document.getElementById('expense-desc').value.trim(),value=num(document.getElementById('expense-value').value);if(!desc||value<=0)return alert('Informe descrição e valor.');expenses.unshift({id:Date.now(),desc,category:document.getElementById('expense-category').value,date:document.getElementById('expense-date').value,value});localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));autoCloudBackup();document.getElementById('expense-desc').value='';document.getElementById('expense-value').value='';renderDashboard();}
+    function deleteExpense(id){if(confirm('Excluir este gasto?')){expenses=expenses.filter(x=>x.id!==id);localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));autoCloudBackup();renderDashboard();}}
     function renderDashboard(){const[a,b]=periodRange(),bs=budgetHistory.filter(x=>inPeriod(x.date,a,b)),es=expenses.filter(x=>inPeriod(x.date,a,b));document.getElementById('dash-period-label').textContent=a.toLocaleDateString('pt-BR')+' a '+b.toLocaleDateString('pt-BR');const sales=bs.reduce((s,x)=>s+budgetValue(x),0),received=bs.reduce((s,x)=>s+num(x.paid),0),mat=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type==='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),svc=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type!=='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),cats={};es.forEach(x=>cats[x.category]=(cats[x.category]||0)+num(x.value));cats['Materiais dos orçamentos']=(cats['Materiais dos orçamentos']||0)+mat;cats['Custos dos serviços']=(cats['Custos dos serviços']||0)+svc;const costs=Object.values(cats).reduce((s,x)=>s+x,0),profit=received-costs;document.getElementById('dash-sales').textContent=money(sales);document.getElementById('dash-received').textContent=money(received);document.getElementById('dash-pending').textContent=money(Math.max(0,sales-received));document.getElementById('dash-paid-count').textContent=bs.filter(x=>calculatedPaymentStatus(budgetValue(x),num(x.paid))==='Pago').length+' / '+bs.length;document.getElementById('dash-costs').textContent=money(costs);document.getElementById('dash-profit').textContent=money(profit);const max=Math.max(1,...Object.values(cats));document.getElementById('dash-breakdown').innerHTML=Object.entries(cats).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="break-row"><div class="break-head"><span>${k}</span><strong>${money(v)}</strong></div><div class="break-bar"><span style="width:${v/max*100}%"></span></div></div>`).join('')||'<div class="empty">Sem gastos no período.</div>';document.getElementById('expense-list').innerHTML=es.map(x=>`<div class="expense-row"><strong>${x.desc}</strong><small>${x.category} • ${parsePtDate(x.date).toLocaleDateString('pt-BR')} • ${money(x.value)}</small><button class="mini-delete" onclick="deleteExpense(${x.id})">🗑️</button></div>`).join('')||'<div class="empty">Nenhum gasto avulso no período.</div>';}
     function backupPayload(){return{app:'CRICORREA Orçamentos',version:4,budgets:budgetHistory,expenses,exportedAt:new Date().toISOString()};}
     function exportBackup(){const blob=new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cricorrea-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);}
@@ -636,24 +651,12 @@
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import{getAuth,setPersistence,browserLocalPersistence,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from"https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import{getFirestore,collection,doc,setDoc,deleteDoc,getDocs,onSnapshot,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 const firebaseConfig={apiKey:"AIzaSyD-lIJtcu3hHO6I1Z3GTLgQdlTg29uZGMg",authDomain:"cricorrea-app.firebaseapp.com",projectId:"cricorrea-app",storageBucket:"cricorrea-app.firebasestorage.app",messagingSenderId:"129894221936",appId:"1:129894221936:web:10da3bc9cae3b843f6ccb5",measurementId:"G-477PHM36BP"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),loading=document.getElementById('auth-loading'),screen=document.getElementById('login-screen'),content=document.getElementById('app-content'),form=document.getElementById('login-form'),email=document.getElementById('login-email'),password=document.getElementById('login-password'),err=document.getElementById('login-error'),ok=document.getElementById('login-success'),loginBtn=document.getElementById('login-button');
+const app=initializeApp(firebaseConfig),auth=getAuth(app),loading=document.getElementById('auth-loading'),screen=document.getElementById('login-screen'),content=document.getElementById('app-content'),form=document.getElementById('login-form'),email=document.getElementById('login-email'),password=document.getElementById('login-password'),err=document.getElementById('login-error'),ok=document.getElementById('login-success'),loginBtn=document.getElementById('login-button');
 function msg(box,text){err.style.display=ok.style.display='none';box.textContent=text;box.style.display='block'}
 function explain(e){const m={'auth/invalid-credential':'E-mail ou senha incorretos.','auth/invalid-email':'E-mail inválido.','auth/user-disabled':'Usuário desativado.','auth/too-many-requests':'Muitas tentativas. Aguarde e tente novamente.','auth/network-request-failed':'Falha de conexão. Verifique a internet.','auth/operation-not-allowed':'O login por e-mail/senha não está ativado no Firebase.','auth/unauthorized-domain':'O domínio do GitHub Pages não está autorizado no Firebase.','auth/api-key-not-valid':'A chave do Firebase é inválida.'};return(m[e.code]||'Erro do Firebase: '+(e.code||e.message))}
-const companyDoc=doc(db,'empresas','cricorrea'),budgetsCol=collection(companyDoc,'orcamentos'),expensesCol=collection(companyDoc,'gastos'),pixDoc=doc(companyDoc,'configuracoes','pix');
-let unsubscribeCloud=[];const clean=v=>JSON.parse(JSON.stringify(v));const syncText=t=>{const e=document.getElementById('sync-status');if(e)e.textContent=t};
-window.cricorreaCloud={
- saveBudget:async b=>{syncText('☁️ Salvando...');await setDoc(doc(budgetsCol,String(b.id)),{...clean(b),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true});syncText('✅ Sincronizado')},
- deleteBudget:async id=>deleteDoc(doc(budgetsCol,String(id))),
- saveExpense:async e=>setDoc(doc(expensesCol,String(e.id)),{...clean(e),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true}),
- deleteExpense:async id=>deleteDoc(doc(expensesCol,String(id))),
- savePix:async x=>setDoc(pixDoc,{...clean(x),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true}),
- uploadAll:async(bs,es,x)=>{const batch=writeBatch(db);bs.forEach(b=>batch.set(doc(budgetsCol,String(b.id)),{...clean(b),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true}));es.forEach(e=>batch.set(doc(expensesCol,String(e.id)),{...clean(e),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true}));batch.set(pixDoc,{...clean(x),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true});await batch.commit()}
-};
-async function startCloudSync(){unsubscribeCloud.forEach(f=>f());unsubscribeCloud=[];syncText('☁️ Conectando...');const rb=await getDocs(budgetsCol),re=await getDocs(expensesCol),lb=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'),le=JSON.parse(localStorage.getItem(EXPENSE_KEY)||'[]');if(rb.empty&&re.empty&&(lb.length||le.length))await window.cricorreaCloud.uploadAll(lb,le,pixSettings);unsubscribeCloud.push(onSnapshot(budgetsCol,q=>{budgetHistory=q.docs.map(d=>d.data()).sort((a,b)=>String(b.id).localeCompare(String(a.id)));localStorage.setItem(STORAGE_KEY,JSON.stringify(budgetHistory));renderHistory();if(document.getElementById('tab-dashboard').style.display!=='none')renderDashboard();syncText('✅ Histórico sincronizado')},e=>syncText('⚠️ '+e.code)));unsubscribeCloud.push(onSnapshot(expensesCol,q=>{expenses=q.docs.map(d=>d.data()).sort((a,b)=>Number(b.id)-Number(a.id));localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));if(document.getElementById('tab-dashboard').style.display!=='none')renderDashboard()},e=>syncText('⚠️ '+e.code)));unsubscribeCloud.push(onSnapshot(pixDoc,d=>{if(d.exists()){pixSettings=d.data();localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));loadPixSettings()}},console.error));}
 try{await setPersistence(auth,browserLocalPersistence)}catch(e){msg(err,explain(e))}
-onAuthStateChanged(auth,u=>{loading.style.display='none';if(u){screen.style.display='none';content.style.display='block';document.getElementById('logged-user').textContent=u.email||'Usuário';startCloudSync().catch(e=>syncText('⚠️ '+(e.code||e.message)))}else{unsubscribeCloud.forEach(f=>f());unsubscribeCloud=[];content.style.display='none';screen.style.display='flex'}});
+onAuthStateChanged(auth,u=>{loading.style.display='none';if(u){screen.style.display='none';content.style.display='block';document.getElementById('logged-user').textContent=u.email||'Usuário'}else{content.style.display='none';screen.style.display='flex'}});
 form.addEventListener('submit',async e=>{e.preventDefault();loginBtn.disabled=true;loginBtn.textContent='Entrando...';try{await signInWithEmailAndPassword(auth,email.value.trim(),password.value)}catch(x){msg(err,explain(x))}finally{loginBtn.disabled=false;loginBtn.textContent='🔐 Entrar'}});
 document.getElementById('reset-button').addEventListener('click',async()=>{if(!email.value.trim())return msg(err,'Digite seu e-mail primeiro.');try{await sendPasswordResetEmail(auth,email.value.trim());msg(ok,'E-mail de redefinição enviado. Verifique também o spam.')}catch(x){msg(err,explain(x))}});
 document.getElementById('logout-button').addEventListener('click',()=>signOut(auth));
