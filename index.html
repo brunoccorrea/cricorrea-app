@@ -154,7 +154,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" class="btn btn-secondary" onclick="addItem()">+ Adicionar à Lista</button>
+        <button type="button" id="add-item-button" class="btn btn-secondary">+ Adicionar à Lista</button>
       </div>
 
       <div class="card">
@@ -257,7 +257,20 @@
     }
 
     function addItem(){
-      const desc=document.getElementById('item-desc').value.trim(),category=document.getElementById('item-category').value,type=document.getElementById('item-type').value,qty=num(document.getElementById('item-qty').value),cost=num(document.getElementById('item-cost').value),gift=document.getElementById('item-cortesia').checked,price=gift?0:num(document.getElementById('item-price').value),idx=Number(document.getElementById('editing-item-index').value);if(!desc)return alert('Digite a descrição.');if(qty<=0)return alert('Informe uma quantidade válida.');const item={type,category,desc,qty,cost,price,isCortesia:gift};if(idx>=0)currentBudget.items[idx]=item;else currentBudget.items.push(item);resetItemForm();renderItems();}
+      try {
+        const descEl=document.getElementById('item-desc'),categoryEl=document.getElementById('item-category'),typeEl=document.getElementById('item-type'),qtyEl=document.getElementById('item-qty'),costEl=document.getElementById('item-cost'),giftEl=document.getElementById('item-cortesia'),priceEl=document.getElementById('item-price'),editEl=document.getElementById('editing-item-index');
+        const desc=descEl.value.trim(),category=categoryEl.value,type=typeEl.value,qty=num(qtyEl.value),cost=num(costEl.value),gift=giftEl.checked,price=gift?0:num(priceEl.value),idx=Number(editEl.value);
+        if(!desc){alert('Digite a descrição do serviço ou material.');descEl.focus();return;}
+        if(qty<=0){alert('Informe uma quantidade maior que zero.');qtyEl.focus();return;}
+        const item={type,category,desc,qty,cost,price,isCortesia:gift};
+        if(!currentBudget||!Array.isArray(currentBudget.items))currentBudget=createEmptyBudget();
+        if(idx>=0&&idx<currentBudget.items.length)currentBudget.items[idx]=item;else currentBudget.items.push(item);
+        resetItemForm();renderItems();
+      } catch(error) {
+        console.error('Falha ao adicionar item:',error);
+        alert('Não foi possível adicionar o item. Atualize a página e tente novamente. Detalhe: '+(error.message||error));
+      }
+    }
     function resetItemForm(){document.getElementById('item-desc').value='';document.getElementById('item-price').value='';document.getElementById('item-cost').value='';document.getElementById('item-qty').value='1';document.getElementById('item-cortesia').checked=false;document.getElementById('editing-item-index').value='-1';selectItemType('Serviço');}
     function editItem(i){const x=currentBudget.items[i];selectItemType(x.type||'Serviço');document.getElementById('item-category').value=x.category;document.getElementById('item-desc').value=x.desc;document.getElementById('item-qty').value=x.qty;document.getElementById('item-cost').value=num(x.cost);document.getElementById('item-price').value=num(x.price);document.getElementById('item-cortesia').checked=!!x.isCortesia;document.getElementById('editing-item-index').value=i;document.getElementById('item-entry-card').scrollIntoView({behavior:'smooth'});}
     function removeItem(index) {
@@ -372,6 +385,7 @@
     function newBudget() {
       currentBudget = createEmptyBudget();
       fillForm();
+    document.getElementById('add-item-button').addEventListener('click', addItem);
       switchTab('editor');
     }
 
