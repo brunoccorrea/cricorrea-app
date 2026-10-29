@@ -104,6 +104,21 @@
     #auth-loading,#login-screen{position:fixed;inset:0;z-index:5000;background:linear-gradient(145deg,#eef3f9,#f8fafc);display:flex;align-items:center;justify-content:center;padding:18px}#login-screen{display:none}.login-card{width:100%;max-width:390px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 18px 50px rgba(24,46,78,.18);border-top:6px solid var(--secondary)}.login-logo{text-align:center;margin-bottom:18px}.login-logo strong{display:block;color:var(--primary);font-size:1.45rem}.login-logo span{color:var(--secondary);font-size:.82rem;font-weight:800}.login-msg{display:none;border-radius:7px;padding:9px;margin:8px 0;font-size:.8rem}.login-error{color:#991b1b;background:#fef2f2;border:1px solid #fecaca}.login-success{color:#166534;background:#f0fdf4;border:1px solid #bbf7d0}.spinner{width:38px;height:38px;border:4px solid #dbe4ef;border-top-color:var(--secondary);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}#app-content{display:none}.user-bar{max-width:600px;margin:0 auto 10px;padding:7px 10px;background:#eef3f9;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.75rem;color:var(--primary)}.btn-logout{border:0;background:var(--danger);color:#fff;border-radius:6px;padding:7px 10px;font-weight:800;cursor:pointer}
 
     .payment-status-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:6px 0 10px}.status-btn{border:1px solid var(--border);border-radius:8px;background:#fff;padding:10px 4px;font-weight:800;font-size:.78rem;cursor:pointer}.status-btn.pending.active{background:#fef2f2;border-color:#fca5a5;color:#b91c1c}.status-btn.partial.active{background:#fffbeb;border-color:#fcd34d;color:#a16207}.status-btn.paid.active{background:#f0fdf4;border-color:#86efac;color:#166534}.status-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.7rem;font-weight:800}.status-pending{background:#fee2e2;color:#b91c1c}.status-partial{background:#fef3c7;color:#a16207}.status-paid{background:#dcfce7;color:#166534}.share-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}.btn-whatsapp{background:#16a34a;color:#fff}.btn-pix{background:#0f766e;color:#fff}.history-actions-extended{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.history-actions-extended .btn{font-size:.76rem;padding:9px 5px}.pix-note{font-size:.72rem;color:var(--text-muted);line-height:1.4;margin-top:6px}@media(max-width:420px){.share-actions{grid-template-columns:1fr}.history-actions-extended{grid-template-columns:1fr 1fr}}
+
+    #pdf-render-document .print-header{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #182e4e;padding-bottom:12px;margin-bottom:14px}
+    #pdf-render-document .print-brand{font-size:28px;font-weight:900;color:#182e4e}
+    #pdf-render-document .print-brand-sub{font-weight:800;color:#f26522;letter-spacing:1px}
+    #pdf-render-document .print-contact{font-size:11px;color:#475569;margin-top:3px}
+    #pdf-render-document .print-title{text-align:center;margin:14px 0}
+    #pdf-render-document .print-title h1{font-size:20px;color:#182e4e;margin:0 0 5px}
+    #pdf-render-document .print-title p{margin:0;color:#64748b}
+    #pdf-render-document .print-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+    #pdf-render-document .print-meta>div{border:1px solid #cbd5e1;border-radius:6px;padding:8px}
+    #pdf-render-document .print-meta span{display:block;font-size:10px;color:#64748b;text-transform:uppercase}
+    #pdf-render-document table{width:100%;border-collapse:collapse;margin:12px 0}
+    #pdf-render-document th,#pdf-render-document td{border:1px solid #cbd5e1;padding:7px;text-align:left}
+    #pdf-render-document th{background:#182e4e;color:#fff}
+    #pdf-render-document .print-total{font-size:18px;font-weight:900;color:#182e4e}
   </style>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -154,7 +169,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão de correção 3</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 4 • itens e PDF corrigidos</div>
       </div>
 
       <div class="card">
@@ -337,7 +352,7 @@
       document.getElementById('total-val').textContent = money(totals.total);
       document.getElementById('balance-val').textContent = money(totals.balance);
       document.getElementById('balance-row').classList.toggle('paid', totals.balance === 0 && totals.total > 0);
-      const status=calculatedPaymentStatus(totals.total,totals.paid);document.getElementById('payment-status').value=status;['Pendente','Parcial','Pago'].forEach(x=>document.getElementById('status-'+x.toLowerCase()).classList.toggle('active',x===status));
+      const status=calculatedPaymentStatus(totals.total,totals.paid);document.getElementById('payment-status').value=status;const statusIds={Pendente:'status-pending',Parcial:'status-partial',Pago:'status-paid'};Object.entries(statusIds).forEach(([name,id])=>{const button=document.getElementById(id);if(button)button.classList.toggle('active',name===status);});
     }
 
     function calculatedPaymentStatus(total, paid) {
@@ -350,7 +365,7 @@
       if (status === 'Pago') document.getElementById('paid-amount').value = total.toFixed(2);
       if (status === 'Pendente') document.getElementById('paid-amount').value = '0.00';
       document.getElementById('payment-status').value = status;
-      ['Pendente','Parcial','Pago'].forEach(x=>document.getElementById('status-'+x.toLowerCase()).classList.toggle('active',x===status));
+      const statusIds={Pendente:'status-pending',Parcial:'status-partial',Pago:'status-paid'};Object.entries(statusIds).forEach(([name,id])=>{const button=document.getElementById(id);if(button)button.classList.toggle('active',name===status);});
       if (!silent) renderSummary();
     }
     function refreshPaymentStatus() {
@@ -598,10 +613,20 @@
     async function createBudgetPdfFile(){
       if(typeof html2pdf==='undefined')throw new Error('Gerador de PDF não carregado. Verifique a internet.');
       preparePrintDocument();
-      const element=document.getElementById('print-document');
-      const old={display:element.style.display,position:element.style.position,left:element.style.left,width:element.style.width,background:element.style.background};
-      Object.assign(element.style,{display:'block',position:'fixed',left:'-10000px',top:'0',width:'794px',background:'#fff'});
-      try{const blob=await html2pdf().set(pdfOptions()).from(element).outputPdf('blob');return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf'});}finally{Object.assign(element.style,old);}
+      const source=document.getElementById('print-document');
+      if(!source||!source.children.length)throw new Error('O documento do orçamento não foi montado.');
+      const clone=source.cloneNode(true);
+      clone.removeAttribute('aria-hidden');
+      clone.id='pdf-render-document';
+      Object.assign(clone.style,{display:'block',position:'fixed',left:'0',top:'0',width:'794px',minHeight:'1123px',padding:'28px',boxSizing:'border-box',background:'#ffffff',color:'#111827',zIndex:'-9999',fontFamily:'Arial, Helvetica, sans-serif',fontSize:'14px',lineHeight:'1.35',overflow:'visible'});
+      document.body.appendChild(clone);
+      try{
+        if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        const blob=await html2pdf().set({margin:[8,8,8,8],filename:`orcamento-${currentBudget.id}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0,windowWidth:794},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(clone).outputPdf('blob');
+        if(!blob||blob.size<1000)throw new Error('O PDF foi gerado sem conteúdo.');
+        return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf'});
+      }finally{clone.remove();}
     }
     async function shareBudgetPDF(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
