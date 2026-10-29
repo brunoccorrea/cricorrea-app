@@ -124,6 +124,7 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 </head>
 <body><div id="auth-loading"><div style="text-align:center"><div class="spinner"></div><div style="margin-top:10px">Verificando acesso...</div></div></div><section id="login-screen"><form id="login-form" class="login-card"><div class="login-logo"><strong>👑 CRICORREA</strong><span>ACESSO AO SISTEMA</span></div><div class="form-group"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div><div class="form-group"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6"></div><div id="login-error" class="login-msg login-error"></div><div id="login-success" class="login-msg login-success"></div><button id="login-button" type="submit" class="btn btn-primary">🔐 Entrar</button><button id="reset-button" type="button" class="btn btn-outline">Esqueci minha senha</button><div style="font-size:.75rem;color:#64748b;text-align:center;margin-top:9px">Somente usuários criados no Firebase podem acessar.</div></form></section>
   <div class="container" id="app-content"><div class="user-bar"><span>Conectado: <strong id="logged-user"></strong><br><small id="sync-status">☁️ Aguardando sincronização</small></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
@@ -170,7 +171,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 5 • sincronização e PDF corrigidos</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 6 • PDF validado e nuvem manual</div>
       </div>
 
       <div class="card">
@@ -212,6 +213,7 @@
       <div class="card"><div class="card-title">Separação dos gastos</div><div id="dash-breakdown"></div></div>
       <div class="card"><div class="card-title">Registrar gasto</div><div class="form-group"><label>Descrição</label><input id="expense-desc" placeholder="Ex.: combustível"></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label>Categoria</label><select id="expense-category"><option>Material</option><option>Combustível</option><option>Ferramentas</option><option>Taxas</option><option>Transporte</option><option>Outros</option></select></div><div class="form-group" style="flex:1"><label>Data</label><input type="date" id="expense-date"></div><div class="form-group" style="flex:1"><label>Valor</label><input type="number" id="expense-value" min="0" step="0.01"></div></div><button type="button" class="btn btn-secondary" onclick="addExpense()">+ Registrar gasto</button></div>
       <div class="card"><div class="card-title">Gastos do período</div><div id="expense-list"></div></div>
+      <div class="card"><div class="card-title">Sincronização entre aparelhos</div><div id="cloud-diagnostic" class="item-cat">Use o botão abaixo no primeiro aparelho para enviar o histórico atual.</div><button type="button" class="btn btn-primary" onclick="syncAllNow()">☁️ Enviar todos os dados para a nuvem</button><button type="button" class="btn btn-outline" onclick="reloadCloudNow()">🔄 Buscar dados da nuvem</button></div>
       <div class="card"><div class="card-title">Configuração da cobrança PIX</div>
         <div class="form-group"><label for="pix-key">Chave PIX</label><input id="pix-key" value="51157076000166" placeholder="CPF, celular, e-mail ou chave aleatória" oninput="savePixSettings()"></div>
         <div class="form-group"><label for="pix-holder">Nome do favorecido</label><input id="pix-holder" value="CRICORREA" placeholder="CRICORREA" oninput="savePixSettings()"></div>
@@ -609,31 +611,38 @@
       window.open(url,'_blank','noopener');
     }
     function pdfOptions(){return{margin:[8,8,8,8],filename:`orcamento-${currentBudget.id}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}};}
+    function asciiPdfText(value){return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');}
     async function createBudgetPdfFile(){
       syncFormToBudget();
-      if(!window.jspdf||!window.jspdf.jsPDF)throw new Error('Biblioteca de PDF não carregada. Atualize a página com internet.');
-      const {jsPDF}=window.jspdf,pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'}),left=15,right=195;
-      let y=16;
-      const line=(text,size=10,bold=false,color=[30,41,59])=>{pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);pdf.setTextColor(...color);const parts=pdf.splitTextToSize(String(text??''),right-left);pdf.text(parts,left,y);y+=parts.length*(size*0.42)+2;};
-      const checkPage=(need=18)=>{if(y+need>282){pdf.addPage();y=16;}};
-      pdf.setFillColor(24,46,78);pdf.rect(0,0,210,30,'F');pdf.setTextColor(255,255,255);pdf.setFont('helvetica','bold');pdf.setFontSize(22);pdf.text('CRICORREA',15,14);pdf.setFontSize(10);pdf.text('MARIDO DE ALUGUEL',15,21);pdf.setFont('helvetica','normal');pdf.text('Eletrica • Climatizacao • TI • Hidraulica • Cameras',15,27);pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text('ORCAMENTO',195,14,{align:'right'});pdf.setFontSize(9);pdf.text(String(currentBudget.id||''),195,21,{align:'right'});y=38;
-      line('ORCAMENTO DE SERVICOS E MATERIAIS',16,true,[24,46,78]);
-      line('Cliente: '+(currentBudget.client||'Nao informado'),11,true);line('Telefone: '+(currentBudget.phone||'-'));line('Endereco: '+(currentBudget.address||'-'));line('Data: '+(currentBudget.date||'-'));y+=2;
-      pdf.setDrawColor(203,213,225);pdf.line(left,y,right,y);y+=7;
-      line('ITENS',12,true,[24,46,78]);
-      (currentBudget.items||[]).forEach((item,index)=>{checkPage(22);line(`${index+1}. ${item.desc}`,10,true);line(`${item.type||'Servico'} • ${item.category||''} • Qtd. ${item.qty} x ${money(item.price)} = ${money(num(item.qty)*num(item.price))}`,9,false,[71,85,105]);y+=2;});
-      checkPage(45);pdf.line(left,y,right,y);y+=7;const totals=getTotals();line('Subtotal: '+money(totals.subtotal),11,true);line('Deslocamento / visita: '+money(num(currentBudget.travel)),10);line('TOTAL GERAL: '+money(totals.total),15,true,[24,46,78]);line('Ja pago: '+money(totals.paid),10);line('Saldo restante: '+money(totals.balance),12,true,totals.balance>0?[185,28,28]:[22,101,52]);line('Situacao: '+calculatedPaymentStatus(totals.total,totals.paid),10,true);
-      if(currentBudget.notes){checkPage(25);y+=3;line('OBSERVACOES',11,true,[24,46,78]);line(currentBudget.notes,9);}
-      checkPage(30);y+=7;pdf.line(55,y,155,y);y+=5;pdf.setFontSize(9);pdf.setTextColor(71,85,105);pdf.text('CRICORREA - Marido de Aluguel',105,y,{align:'center'});pdf.text('(48) 98427-2764 | @cricorrea2',105,y+5,{align:'center'});
-      const blob=pdf.output('blob');if(!blob||blob.size<1500)throw new Error('Falha ao montar o conteudo do PDF.');return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf'});
+      if(!window.PDFLib)throw new Error('Gerador PDFLib não carregou. Abra o aplicativo com internet e atualize.');
+      const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
+      const pdfDoc=await PDFDocument.create();
+      pdfDoc.setTitle(`Orcamento ${currentBudget.id}`);pdfDoc.setAuthor('CRICORREA');pdfDoc.setSubject('Orcamento de servicos e materiais');
+      const regular=await pdfDoc.embedFont(StandardFonts.Helvetica),bold=await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      let page=pdfDoc.addPage([595.28,841.89]),y=800;
+      const addPage=()=>{page=pdfDoc.addPage([595.28,841.89]);y=800;};
+      const text=(value,size=10,isBold=false,color=rgb(.12,.16,.23),x=42)=>{const font=isBold?bold:regular,max=510,words=asciiPdfText(value).split(/\s+/);let line='';for(const word of words){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)>max&&line){if(y<55)addPage();page.drawText(line,{x,y,size,font,color});y-=size+4;line=word}else line=test}if(line){if(y<55)addPage();page.drawText(line,{x,y,size,font,color});y-=size+4}};
+      page.drawRectangle({x:0,y:755,width:595.28,height:86,color:rgb(.094,.18,.306)});page.drawText('CRICORREA',{x:42,y:806,size:24,font:bold,color:rgb(1,1,1)});page.drawText('MARIDO DE ALUGUEL',{x:42,y:786,size:11,font:bold,color:rgb(.95,.4,.12)});page.drawText('ORCAMENTO',{x:430,y:806,size:14,font:bold,color:rgb(1,1,1)});page.drawText(asciiPdfText(currentBudget.id),{x:430,y:786,size:9,font:regular,color:rgb(1,1,1)});y=725;
+      text('ORCAMENTO DE SERVICOS E MATERIAIS',16,true,rgb(.094,.18,.306));y-=4;text('Cliente: '+(currentBudget.client||'Nao informado'),11,true);text('Telefone: '+(currentBudget.phone||'-'));text('Endereco: '+(currentBudget.address||'-'));text('Data: '+(currentBudget.date||'-'));y-=6;
+      text('ITENS',12,true,rgb(.094,.18,.306));
+      (currentBudget.items||[]).forEach((it,i)=>{text(`${i+1}. ${it.desc}`,10,true);text(`${it.type||'Servico'} | ${it.category||''} | Qtd ${it.qty} x ${money(it.price)} = ${money(num(it.qty)*num(it.price))}`,9,false,rgb(.28,.33,.41));y-=3});
+      const totals=getTotals();y-=5;text('Subtotal: '+money(totals.subtotal),11,true);text('Deslocamento / visita: '+money(num(currentBudget.travel)),10);text('TOTAL GERAL: '+money(totals.total),15,true,rgb(.094,.18,.306));text('Ja pago: '+money(totals.paid));text('Saldo restante: '+money(totals.balance),12,true,totals.balance>0?rgb(.72,.11,.11):rgb(.08,.45,.22));text('Situacao: '+calculatedPaymentStatus(totals.total,totals.paid),10,true);
+      if(currentBudget.notes){y-=6;text('OBSERVACOES',11,true,rgb(.094,.18,.306));text(currentBudget.notes,9)}
+      y=Math.max(y-30,45);page.drawText('CRICORREA - Marido de Aluguel | (48) 98427-2764 | @cricorrea2',{x:100,y:30,size:8,font:regular,color:rgb(.28,.33,.41)});
+      const bytes=await pdfDoc.save({useObjectStreams:false});
+      if(!bytes||bytes.length<1800)throw new Error('PDF gerado sem dados suficientes.');
+      const signature=String.fromCharCode(...bytes.slice(0,4));if(signature!=='%PDF')throw new Error('Arquivo PDF invalido.');
+      const blob=new Blob([bytes],{type:'application/pdf'});return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf',lastModified:Date.now()});
     }
     async function shareBudgetPDF(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
       try{
-        const file=await createBudgetPdfFile();const text=`Orçamento ${currentBudget.id} - ${currentBudget.client||'Cliente'} - ${money(budgetTotal(currentBudget))}`;const data={files:[file],title:'Orçamento CRICORREA',text};
-        if(navigator.canShare&&navigator.canShare(data)){await navigator.share(data);return;}
-        const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);openWhatsApp(text+'\n\nO PDF foi baixado. Anexe o arquivo nesta conversa.');
-      }catch(e){if(e.name!=='AbortError')alert('Não foi possível compartilhar o PDF: '+e.message);}
+        const file=await createBudgetPdfFile();
+        const verifyUrl=URL.createObjectURL(file);const a=document.createElement('a');a.href=verifyUrl;a.download=file.name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(verifyUrl),30000);
+        const data={files:[file],title:'Orcamento CRICORREA',text:`Orcamento ${currentBudget.id} - ${currentBudget.client||'Cliente'} - ${money(budgetTotal(currentBudget))}`};
+        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share(data);return;}
+        openWhatsApp(data.text+'\n\nO PDF foi baixado no aparelho. Anexe o arquivo '+file.name+' nesta conversa.');
+      }catch(e){if(e.name!=='AbortError')alert('Não foi possível gerar ou compartilhar o PDF: '+e.message);}
     }
     function buildPixMessage(){
       syncFormToBudget();const total=budgetTotal(currentBudget),balance=Math.max(0,total-num(currentBudget.paid));
@@ -669,6 +678,8 @@
     document.getElementById('dash-reference').value=new Date().toISOString().slice(0,10);document.getElementById('expense-date').value=new Date().toISOString().slice(0,10);
     if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./service-worker.js').catch(console.warn);
 
+    async function syncAllNow(){try{if(!window.cricorreaCloud?.uploadAll)return alert('A nuvem ainda não conectou. Confira o indicador abaixo do login.');document.getElementById('cloud-diagnostic').textContent='Enviando dados...';await window.cricorreaCloud.uploadAll(budgetHistory,expenses,pixSettings);document.getElementById('cloud-diagnostic').textContent='✅ Dados enviados para a nuvem.';}catch(e){document.getElementById('cloud-diagnostic').textContent='⚠️ '+(e.code||e.message);alert('Falha ao sincronizar: '+(e.code||e.message));}}
+    async function reloadCloudNow(){try{if(!window.cricorreaCloud?.reload)return alert('A nuvem ainda não conectou.');document.getElementById('cloud-diagnostic').textContent='Buscando dados...';await window.cricorreaCloud.reload();document.getElementById('cloud-diagnostic').textContent='✅ Dados atualizados da nuvem.';}catch(e){document.getElementById('cloud-diagnostic').textContent='⚠️ '+(e.code||e.message);alert('Falha ao buscar: '+(e.code||e.message));}}
     window.cricorreaBridge={
       getBudgets:()=>JSON.parse(JSON.stringify(budgetHistory)),
       getExpenses:()=>JSON.parse(JSON.stringify(expenses)),
@@ -698,7 +709,9 @@ window.cricorreaCloud={
  deleteBudget:id=>deleteDoc(doc(budgetsCol,String(id))),
  saveExpense:e=>setDoc(doc(expensesCol,String(e.id)),{...clean(e),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true}),
  deleteExpense:id=>deleteDoc(doc(expensesCol,String(id))),
- savePix:x=>setDoc(pixDoc,{...clean(x),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true})
+ savePix:x=>setDoc(pixDoc,{...clean(x),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.uid||''},{merge:true}),
+ uploadAll:async(bs,es,x)=>{status('☁️ Enviando tudo...');const batch=writeBatch(db);bs.forEach(b=>batch.set(doc(budgetsCol,String(b.id)),{...clean(b),updatedAt:serverTimestamp(),updatedBy:auth.currentUser.uid},{merge:true}));es.forEach(e=>batch.set(doc(expensesCol,String(e.id)),{...clean(e),updatedAt:serverTimestamp(),updatedBy:auth.currentUser.uid},{merge:true}));batch.set(pixDoc,{...clean(x),updatedAt:serverTimestamp(),updatedBy:auth.currentUser.uid},{merge:true});await batch.commit();status('✅ Tudo sincronizado');},
+ reload:async()=>{const [bs,es,px]=await Promise.all([getDocs(budgetsCol),getDocs(expensesCol),getDocs(collection(company,'configuracoes'))]);window.cricorreaBridge.applyBudgets(bs.docs.map(d=>d.data()).sort((a,b)=>String(b.id).localeCompare(String(a.id))));window.cricorreaBridge.applyExpenses(es.docs.map(d=>d.data()).sort((a,b)=>Number(b.id)-Number(a.id)));const p=px.docs.find(d=>d.id==='pix');if(p)window.cricorreaBridge.applyPix(p.data());status('✅ Dados buscados da nuvem');}
 };
 async function startCloudSync(){
  unsubscribers.forEach(f=>f());unsubscribers=[];status('☁️ Conectando ao Firestore...');
