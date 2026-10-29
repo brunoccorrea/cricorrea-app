@@ -102,9 +102,12 @@
     .period-selector{grid-template-columns:repeat(4,1fr)}.dashboard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}.metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px}.metric small{display:block;color:var(--text-muted);font-size:.7rem;font-weight:800;text-transform:uppercase}.metric strong{display:block;font-size:1.12rem;margin-top:5px;color:var(--primary)}.metric.good strong{color:var(--success)}.metric.bad strong{color:var(--danger)}.expense-row{position:relative;border-bottom:1px dashed var(--border);padding:9px 38px 9px 0}.expense-row:last-child{border:0}.expense-row small{display:block;color:var(--text-muted)}.mini-delete{position:absolute;right:0;top:8px;border:0;border-radius:6px;padding:6px;background:var(--danger);color:#fff}.break-row{margin:8px 0}.break-head{display:flex;justify-content:space-between;font-size:.84rem}.break-bar{height:8px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin-top:4px}.break-bar span{display:block;height:100%;background:var(--secondary)}.item-actions{position:absolute;right:8px;top:8px;display:flex;gap:4px}.btn-mini{border:0;border-radius:6px;padding:6px;color:#fff}.btn-edit{background:var(--primary)}@media(max-width:420px){.period-selector{grid-template-columns:1fr 1fr}}
 
     #auth-loading,#login-screen{position:fixed;inset:0;z-index:5000;background:linear-gradient(145deg,#eef3f9,#f8fafc);display:flex;align-items:center;justify-content:center;padding:18px}#login-screen{display:none}.login-card{width:100%;max-width:390px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 18px 50px rgba(24,46,78,.18);border-top:6px solid var(--secondary)}.login-logo{text-align:center;margin-bottom:18px}.login-logo strong{display:block;color:var(--primary);font-size:1.45rem}.login-logo span{color:var(--secondary);font-size:.82rem;font-weight:800}.login-msg{display:none;border-radius:7px;padding:9px;margin:8px 0;font-size:.8rem}.login-error{color:#991b1b;background:#fef2f2;border:1px solid #fecaca}.login-success{color:#166534;background:#f0fdf4;border:1px solid #bbf7d0}.spinner{width:38px;height:38px;border:4px solid #dbe4ef;border-top-color:var(--secondary);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}#app-content{display:none}.user-bar{max-width:600px;margin:0 auto 10px;padding:7px 10px;background:#eef3f9;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.75rem;color:var(--primary)}.btn-logout{border:0;background:var(--danger);color:#fff;border-radius:6px;padding:7px 10px;font-weight:800;cursor:pointer}
+
+    .payment-status-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:6px 0 10px}.status-btn{border:1px solid var(--border);border-radius:8px;background:#fff;padding:10px 4px;font-weight:800;font-size:.78rem;cursor:pointer}.status-btn.pending.active{background:#fef2f2;border-color:#fca5a5;color:#b91c1c}.status-btn.partial.active{background:#fffbeb;border-color:#fcd34d;color:#a16207}.status-btn.paid.active{background:#f0fdf4;border-color:#86efac;color:#166534}.status-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.7rem;font-weight:800}.status-pending{background:#fee2e2;color:#b91c1c}.status-partial{background:#fef3c7;color:#a16207}.status-paid{background:#dcfce7;color:#166534}.share-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}.btn-whatsapp{background:#16a34a;color:#fff}.btn-pix{background:#0f766e;color:#fff}.history-actions-extended{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.history-actions-extended .btn{font-size:.76rem;padding:9px 5px}.pix-note{font-size:.72rem;color:var(--text-muted);line-height:1.4;margin-top:6px}@media(max-width:420px){.share-actions{grid-template-columns:1fr}.history-actions-extended{grid-template-columns:1fr 1fr}}
   </style>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body><div id="auth-loading"><div style="text-align:center"><div class="spinner"></div><div style="margin-top:10px">Verificando acesso...</div></div></div><section id="login-screen"><form id="login-form" class="login-card"><div class="login-logo"><strong>👑 CRICORREA</strong><span>ACESSO AO SISTEMA</span></div><div class="form-group"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div><div class="form-group"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6"></div><div id="login-error" class="login-msg login-error"></div><div id="login-success" class="login-msg login-success"></div><button id="login-button" type="submit" class="btn btn-primary">🔐 Entrar</button><button id="reset-button" type="button" class="btn btn-outline">Esqueci minha senha</button><div style="font-size:.75rem;color:#64748b;text-align:center;margin-top:9px">Somente usuários criados no Firebase podem acessar.</div></form></section>
   <div class="container" id="app-content"><div class="user-bar"><span>Conectado: <strong id="logged-user"></strong></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
@@ -161,11 +164,22 @@
           <div class="summary-row"><span>Subtotal de serviços:</span><span id="subtotal-val">R$ 0,00</span></div>
           <div class="summary-row" style="background:#fff7ed;padding:6px;border-radius:6px"><label for="travel-cost" style="color:inherit;text-transform:none">🚗 Deslocamento / visita (R$):</label><input type="number" id="travel-cost" value="0.00" min="0" step="0.01" oninput="renderSummary()" style="width:95px;text-align:right;padding:4px"></div>
           <div class="summary-row total"><span>TOTAL GERAL:</span><span id="total-val">R$ 0,00</span></div>
+          <label>Situação do pagamento</label>
+          <div class="payment-status-selector">
+            <button type="button" id="status-pending" class="status-btn pending active" onclick="setPaymentStatus('Pendente')">🔴 Pendente</button>
+            <button type="button" id="status-partial" class="status-btn partial" onclick="setPaymentStatus('Parcial')">🟡 Parcial</button>
+            <button type="button" id="status-paid" class="status-btn paid" onclick="setPaymentStatus('Pago')">🟢 Pago</button>
+          </div>
+          <input type="hidden" id="payment-status" value="Pendente">
           <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="paid-amount">Já pago (R$)</label><input type="number" id="paid-amount" value="0.00" min="0" step="0.01" oninput="renderSummary()"></div><div class="form-group" style="flex:1"><label for="paid-method">Pagamento</label><select id="paid-method"><option>Pix</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Dinheiro</option><option>Transferência</option></select></div></div>
           <div class="summary-row balance" id="balance-row"><span>SALDO RESTANTE:</span><span id="balance-val">R$ 0,00</span></div>
         </div>
         <button type="button" class="btn btn-primary" onclick="saveCurrentBudget()">💾 Salvar Orçamento</button>
-        <button type="button" class="btn btn-secondary" onclick="copyWhatsAppMessage()">📱 Copiar p/ WhatsApp</button>
+        <div class="share-actions">
+          <button type="button" class="btn btn-whatsapp" onclick="shareBudgetPDF()">📤 Enviar PDF pelo WhatsApp</button>
+          <button type="button" class="btn btn-pix" onclick="sendPixCharge()">💠 Cobrar PIX pelo WhatsApp</button>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="copyWhatsAppMessage()">📱 Copiar resumo p/ WhatsApp</button>
         <button type="button" class="btn btn-outline" onclick="printBudget()">📄 Imprimir / Salvar PDF</button>
         <button type="button" class="btn btn-outline" onclick="newBudget()">🆕 Limpar / Novo orçamento</button>
       </div>
@@ -178,10 +192,16 @@
     <div id="tab-dashboard" style="display:none">
       <div class="period-selector"><button type="button" id="period-day" class="period-btn" onclick="setPeriod('day')">Hoje</button><button type="button" id="period-week" class="period-btn" onclick="setPeriod('week')">Semana</button><button type="button" id="period-month" class="period-btn active" onclick="setPeriod('month')">Mês</button><button type="button" id="period-year" class="period-btn" onclick="setPeriod('year')">Ano</button></div>
       <div class="card"><div class="form-group"><label for="dash-reference">Data de referência</label><input type="date" id="dash-reference" onchange="renderDashboard()"></div><div id="dash-period-label" class="item-cat"></div></div>
-      <div class="dashboard-grid"><div class="metric"><small>Orçado</small><strong id="dash-sales">R$ 0,00</strong></div><div class="metric"><small>Recebido</small><strong id="dash-received">R$ 0,00</strong></div><div class="metric bad"><small>Gastos</small><strong id="dash-costs">R$ 0,00</strong></div><div class="metric good"><small>Rendimento líquido</small><strong id="dash-profit">R$ 0,00</strong></div></div>
+      <div class="dashboard-grid"><div class="metric"><small>Orçado</small><strong id="dash-sales">R$ 0,00</strong></div><div class="metric"><small>Recebido</small><strong id="dash-received">R$ 0,00</strong></div><div class="metric bad"><small>Pendente</small><strong id="dash-pending">R$ 0,00</strong></div><div class="metric"><small>Pagos / Total</small><strong id="dash-paid-count">0 / 0</strong></div><div class="metric bad"><small>Gastos</small><strong id="dash-costs">R$ 0,00</strong></div><div class="metric good"><small>Rendimento líquido</small><strong id="dash-profit">R$ 0,00</strong></div></div>
       <div class="card"><div class="card-title">Separação dos gastos</div><div id="dash-breakdown"></div></div>
       <div class="card"><div class="card-title">Registrar gasto</div><div class="form-group"><label>Descrição</label><input id="expense-desc" placeholder="Ex.: combustível"></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label>Categoria</label><select id="expense-category"><option>Material</option><option>Combustível</option><option>Ferramentas</option><option>Taxas</option><option>Transporte</option><option>Outros</option></select></div><div class="form-group" style="flex:1"><label>Data</label><input type="date" id="expense-date"></div><div class="form-group" style="flex:1"><label>Valor</label><input type="number" id="expense-value" min="0" step="0.01"></div></div><button type="button" class="btn btn-secondary" onclick="addExpense()">+ Registrar gasto</button></div>
       <div class="card"><div class="card-title">Gastos do período</div><div id="expense-list"></div></div>
+      <div class="card"><div class="card-title">Configuração da cobrança PIX</div>
+        <div class="form-group"><label for="pix-key">Chave PIX</label><input id="pix-key" value="51157076000166" placeholder="CPF, celular, e-mail ou chave aleatória" oninput="savePixSettings()"></div>
+        <div class="form-group"><label for="pix-holder">Nome do favorecido</label><input id="pix-holder" value="CRICORREA" placeholder="CRICORREA" oninput="savePixSettings()"></div>
+        <button type="button" class="btn btn-outline" onclick="restoreDefaultPix()">↩️ Restaurar PIX padrão</button>
+        <div class="pix-note">PIX padrão: CNPJ 51.157.076/0001-66. Você pode alterar a chave e o favorecido quando precisar; a alteração fica salva neste aparelho.</div>
+      </div>
       <div class="card"><div class="card-title">Backup no Google Drive</div><button type="button" class="btn btn-primary" onclick="chooseGoogleDriveFolder()">☁️ Escolher pasta do Google Drive</button><button type="button" class="btn btn-outline" onclick="runCloudBackup()">🔄 Salvar backup agora</button><button type="button" class="btn btn-outline" onclick="exportBackup()">⬇️ Baixar backup</button><label class="btn btn-outline" style="cursor:pointer">⬆️ Restaurar backup<input type="file" accept="application/json" onchange="importBackup(event)" style="display:none"></label><div id="cloud-backup-status" class="item-cat" style="margin-top:8px">Google Drive ainda não configurado.</div><div class="item-cat" style="margin-top:5px">A pasta escolhida recebe automaticamente o arquivo cricorrea-backup-automatico.json quando os dados mudarem.</div></div>
     </div>
   </div>
@@ -192,9 +212,11 @@
     'use strict';
     const STORAGE_KEY = 'cricorrea_history';
     const EXPENSE_KEY = 'cricorrea_expenses';
+    const PIX_KEY = 'cricorrea_pix_settings';
     let expenses = JSON.parse(localStorage.getItem(EXPENSE_KEY) || '[]');
     let dashboardPeriod = 'month';
     let cloudDirectoryHandle = null;
+    let pixSettings = JSON.parse(localStorage.getItem(PIX_KEY) || '{"key":"51157076000166","holder":"CRICORREA"}');
     let budgetHistory = loadHistory();
     let currentBudget = createEmptyBudget();
 
@@ -224,7 +246,7 @@
     }
 
     function createEmptyBudget() {
-      return { id: nextBudgetId(), date: new Date().toLocaleDateString('pt-BR'), client: '', phone: '', address: '', items: [], travel: 0, paid: 0, paidMethod: 'Pix' };
+      return { id: nextBudgetId(), date: new Date().toLocaleDateString('pt-BR'), client: '', phone: '', address: '', items: [], travel: 0, paid: 0, paidMethod: 'Pix', paymentStatus: 'Pendente' };
     }
 
     const money = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
@@ -294,8 +316,32 @@
       document.getElementById('total-val').textContent = money(totals.total);
       document.getElementById('balance-val').textContent = money(totals.balance);
       document.getElementById('balance-row').classList.toggle('paid', totals.balance === 0 && totals.total > 0);
+      const status=calculatedPaymentStatus(totals.total,totals.paid);document.getElementById('payment-status').value=status;['Pendente','Parcial','Pago'].forEach(x=>document.getElementById('status-'+x.toLowerCase()).classList.toggle('active',x===status));
     }
 
+    function calculatedPaymentStatus(total, paid) {
+      if (total > 0 && paid >= total) return 'Pago';
+      if (paid > 0) return 'Parcial';
+      return 'Pendente';
+    }
+    function setPaymentStatus(status, silent=false) {
+      const total = getTotals().total;
+      if (status === 'Pago') document.getElementById('paid-amount').value = total.toFixed(2);
+      if (status === 'Pendente') document.getElementById('paid-amount').value = '0.00';
+      document.getElementById('payment-status').value = status;
+      ['Pendente','Parcial','Pago'].forEach(x=>document.getElementById('status-'+x.toLowerCase()).classList.toggle('active',x===status));
+      if (!silent) renderSummary();
+    }
+    function refreshPaymentStatus() {
+      const totals = getTotals();
+      setPaymentStatus(calculatedPaymentStatus(totals.total, totals.paid), true);
+    }
+    function savePixSettings(){
+      pixSettings={key:document.getElementById('pix-key').value.trim(),holder:document.getElementById('pix-holder').value.trim()||'CRICORREA'};
+      localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));
+    }
+    function loadPixSettings(){document.getElementById('pix-key').value=pixSettings.key||'51157076000166';document.getElementById('pix-holder').value=pixSettings.holder||'CRICORREA';}
+    function restoreDefaultPix(){pixSettings={key:'51157076000166',holder:'CRICORREA'};localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));loadPixSettings();alert('PIX padrão restaurado: CNPJ 51.157.076/0001-66.');}
     function syncFormToBudget() {
       currentBudget.client = document.getElementById('client-name').value.trim();
       currentBudget.phone = document.getElementById('client-phone').value.trim();
@@ -303,6 +349,7 @@
       currentBudget.travel = num(document.getElementById('travel-cost').value);
       currentBudget.paid = num(document.getElementById('paid-amount').value);
       currentBudget.paidMethod = document.getElementById('paid-method').value;
+      currentBudget.paymentStatus = calculatedPaymentStatus(budgetTotal(currentBudget), currentBudget.paid);
       currentBudget.date = currentBudget.date || new Date().toLocaleDateString('pt-BR');
     }
 
@@ -326,6 +373,7 @@
       document.getElementById('travel-cost').value = num(currentBudget.travel).toFixed(2);
       document.getElementById('paid-amount').value = num(currentBudget.paid).toFixed(2);
       document.getElementById('paid-method').value = currentBudget.paidMethod || 'Pix';
+      setPaymentStatus(currentBudget.paymentStatus || calculatedPaymentStatus(budgetTotal(currentBudget), num(currentBudget.paid)), true);
       renderItems();
     }
 
@@ -354,26 +402,24 @@
     }
 
     function renderHistory() {
-      const container = document.getElementById('history-cards-container');
-      const query = document.getElementById('search-input').value.trim().toLocaleLowerCase('pt-BR');
-      const filtered = budgetHistory.filter(budget => [budget.id, budget.client, budget.phone, budget.address, ...(budget.items || []).flatMap(item => [item.desc, item.category])].join(' ').toLocaleLowerCase('pt-BR').includes(query));
+      const container=document.getElementById('history-cards-container'),query=document.getElementById('search-input').value.trim().toLocaleLowerCase('pt-BR');
+      const filtered=budgetHistory.filter(b=>[b.id,b.client,b.phone,b.address,...(b.items||[]).flatMap(i=>[i.desc,i.category])].join(' ').toLocaleLowerCase('pt-BR').includes(query));
       container.replaceChildren();
-      if (!filtered.length) return container.appendChild(makeElement('div', 'empty', query ? 'Nenhum orçamento encontrado.' : 'O histórico está vazio.'));
-      filtered.forEach(budget => {
-        const card = makeElement('div', 'history-card');
-        const title = makeElement('div', 'card-title');
-        title.appendChild(makeElement('span', '', budget.client || 'Cliente não informado'));
-        title.appendChild(makeElement('span', 'badge', budget.id || 'Sem número'));
-        card.appendChild(title);
-        card.appendChild(makeElement('div', 'item-cat', `Data: ${budget.date || '-'} • ${budget.phone || 'Sem telefone'}`));
-        card.appendChild(makeElement('div', 'item-details', `${(budget.items || []).length} item(ns) • Total: ${money(budgetTotal(budget))}`));
-        const actions = makeElement('div', 'history-actions');
-        const edit = makeElement('button', 'btn btn-primary', '✏️ Abrir / Editar'); edit.type = 'button'; edit.onclick = () => editBudget(budget.id);
-        const del = makeElement('button', 'btn btn-danger', '🗑️ Excluir'); del.type = 'button'; del.onclick = () => deleteBudget(budget.id);
-        actions.append(edit, del); card.appendChild(actions); container.appendChild(card);
+      if(!filtered.length)return container.appendChild(makeElement('div','empty',query?'Nenhum orçamento encontrado.':'O histórico está vazio.'));
+      filtered.forEach(b=>{
+        const total=budgetTotal(b),paid=num(b.paid),balance=Math.max(0,total-paid),status=b.paymentStatus||calculatedPaymentStatus(total,paid);
+        const card=makeElement('div','history-card'),title=makeElement('div','card-title');title.appendChild(makeElement('span','',b.client||'Cliente não informado'));title.appendChild(makeElement('span','badge',b.id||'Sem número'));card.appendChild(title);
+        card.appendChild(makeElement('div','item-cat',`Data: ${b.date||'-'} • ${b.phone||'Sem telefone'}`));
+        card.appendChild(makeElement('div','item-details',`${(b.items||[]).length} item(ns) • Total: ${money(total)}`));
+        const statusRow=makeElement('div','item-details');statusRow.appendChild(makeElement('span','status-badge status-'+status.toLowerCase(),status==='Pago'?'🟢 Pago':status==='Parcial'?'🟡 Parcial':'🔴 Pendente'));statusRow.appendChild(makeElement('strong','',`Restante: ${money(balance)}`));card.appendChild(statusRow);
+        const actions=makeElement('div','history-actions-extended');
+        const edit=makeElement('button','btn btn-primary','✏️ Abrir');edit.onclick=()=>editBudget(b.id);
+        const pdf=makeElement('button','btn btn-whatsapp','📤 PDF');pdf.onclick=()=>shareStoredBudgetPDF(b.id);
+        const pix=makeElement('button','btn btn-pix','💠 Cobrar PIX');pix.onclick=()=>sendStoredPixCharge(b.id);
+        const del=makeElement('button','btn btn-danger','🗑️ Excluir');del.onclick=()=>deleteBudget(b.id);
+        actions.append(edit,pdf,pix,del);card.appendChild(actions);container.appendChild(card);
       });
     }
-
     function buildWhatsAppMessage() {
       syncFormToBudget();
       const total = budgetTotal(currentBudget);
@@ -516,6 +562,44 @@
       window.print();
     }
 
+    function normalizedWhatsAppPhone(value){
+      let digits=String(value||'').replace(/\D/g,'');
+      if(!digits)return '';
+      if(digits.length===10||digits.length===11)digits='55'+digits;
+      return digits;
+    }
+    function openWhatsApp(text, phone=currentBudget.phone){
+      const number=normalizedWhatsAppPhone(phone);
+      const url=number?'https://wa.me/'+number+'?text='+encodeURIComponent(text):'https://wa.me/?text='+encodeURIComponent(text);
+      window.open(url,'_blank','noopener');
+    }
+    function pdfOptions(){return{margin:[8,8,8,8],filename:`orcamento-${currentBudget.id}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}};}
+    async function createBudgetPdfFile(){
+      if(typeof html2pdf==='undefined')throw new Error('Gerador de PDF não carregado. Verifique a internet.');
+      preparePrintDocument();
+      const element=document.getElementById('print-document');
+      const old={display:element.style.display,position:element.style.position,left:element.style.left,width:element.style.width,background:element.style.background};
+      Object.assign(element.style,{display:'block',position:'fixed',left:'-10000px',top:'0',width:'794px',background:'#fff'});
+      try{const blob=await html2pdf().set(pdfOptions()).from(element).outputPdf('blob');return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf'});}finally{Object.assign(element.style,old);}
+    }
+    async function shareBudgetPDF(){
+      syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
+      try{
+        const file=await createBudgetPdfFile();const text=`Orçamento ${currentBudget.id} - ${currentBudget.client||'Cliente'} - ${money(budgetTotal(currentBudget))}`;const data={files:[file],title:'Orçamento CRICORREA',text};
+        if(navigator.canShare&&navigator.canShare(data)){await navigator.share(data);return;}
+        const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);openWhatsApp(text+'\n\nO PDF foi baixado. Anexe o arquivo nesta conversa.');
+      }catch(e){if(e.name!=='AbortError')alert('Não foi possível compartilhar o PDF: '+e.message);}
+    }
+    function buildPixMessage(){
+      syncFormToBudget();const total=budgetTotal(currentBudget),balance=Math.max(0,total-num(currentBudget.paid));
+      if(balance<=0)return null;
+      return `Olá, ${currentBudget.client||''}!\n\nSegue a cobrança referente ao orçamento ${currentBudget.id} da CRICORREA.\n\nValor do orçamento: ${money(total)}\nValor já pago: ${money(currentBudget.paid)}\n*Valor pendente para PIX: ${money(balance)}*\n\nChave PIX (CNPJ): ${pixSettings.key==='51157076000166'?'51.157.076/0001-66':pixSettings.key||'[chave PIX não configurada]'}\nFavorecido: ${pixSettings.holder||'CRICORREA'}\n\nApós o pagamento, por favor envie o comprovante por esta conversa.`;
+    }
+    function sendPixCharge(){
+      syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione itens ao orçamento primeiro.');if(!pixSettings.key)return alert('Configure a chave PIX no Dashboard antes de enviar a cobrança.');const text=buildPixMessage();if(!text)return alert('Este orçamento já está marcado como pago.');openWhatsApp(text,currentBudget.phone);
+    }
+    async function shareStoredBudgetPDF(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();await shareBudgetPDF();}
+    function sendStoredPixCharge(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();sendPixCharge();}
     function parsePtDate(v){if(!v)return null;if(v.includes('/')){const p=v.split('/');return new Date(+p[2],+p[1]-1,+p[0]);}const p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
     function periodRange(){const r=parsePtDate(document.getElementById('dash-reference').value)||new Date();let a=new Date(r),b=new Date(r);if(dashboardPeriod==='week'){const n=(r.getDay()+6)%7;a.setDate(r.getDate()-n);b=new Date(a);b.setDate(a.getDate()+6);}else if(dashboardPeriod==='month'){a=new Date(r.getFullYear(),r.getMonth(),1);b=new Date(r.getFullYear(),r.getMonth()+1,0);}else if(dashboardPeriod==='year'){a=new Date(r.getFullYear(),0,1);b=new Date(r.getFullYear(),11,31);}return[a,b];}
     function setPeriod(p){dashboardPeriod=p;['day','week','month','year'].forEach(x=>document.getElementById('period-'+x).classList.toggle('active',x===p));renderDashboard();}
@@ -523,7 +607,7 @@
     function budgetValue(b){return (b.items||[]).reduce((s,x)=>s+num(x.qty)*num(x.price),0)+num(b.travel);}
     function addExpense(){const desc=document.getElementById('expense-desc').value.trim(),value=num(document.getElementById('expense-value').value);if(!desc||value<=0)return alert('Informe descrição e valor.');expenses.unshift({id:Date.now(),desc,category:document.getElementById('expense-category').value,date:document.getElementById('expense-date').value,value});localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));autoCloudBackup();document.getElementById('expense-desc').value='';document.getElementById('expense-value').value='';renderDashboard();}
     function deleteExpense(id){if(confirm('Excluir este gasto?')){expenses=expenses.filter(x=>x.id!==id);localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));autoCloudBackup();renderDashboard();}}
-    function renderDashboard(){const[a,b]=periodRange(),bs=budgetHistory.filter(x=>inPeriod(x.date,a,b)),es=expenses.filter(x=>inPeriod(x.date,a,b));document.getElementById('dash-period-label').textContent=a.toLocaleDateString('pt-BR')+' a '+b.toLocaleDateString('pt-BR');const sales=bs.reduce((s,x)=>s+budgetValue(x),0),received=bs.reduce((s,x)=>s+num(x.paid),0),mat=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type==='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),svc=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type!=='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),cats={};es.forEach(x=>cats[x.category]=(cats[x.category]||0)+num(x.value));cats['Materiais dos orçamentos']=(cats['Materiais dos orçamentos']||0)+mat;cats['Custos dos serviços']=(cats['Custos dos serviços']||0)+svc;const costs=Object.values(cats).reduce((s,x)=>s+x,0),profit=received-costs;document.getElementById('dash-sales').textContent=money(sales);document.getElementById('dash-received').textContent=money(received);document.getElementById('dash-costs').textContent=money(costs);document.getElementById('dash-profit').textContent=money(profit);const max=Math.max(1,...Object.values(cats));document.getElementById('dash-breakdown').innerHTML=Object.entries(cats).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="break-row"><div class="break-head"><span>${k}</span><strong>${money(v)}</strong></div><div class="break-bar"><span style="width:${v/max*100}%"></span></div></div>`).join('')||'<div class="empty">Sem gastos no período.</div>';document.getElementById('expense-list').innerHTML=es.map(x=>`<div class="expense-row"><strong>${x.desc}</strong><small>${x.category} • ${parsePtDate(x.date).toLocaleDateString('pt-BR')} • ${money(x.value)}</small><button class="mini-delete" onclick="deleteExpense(${x.id})">🗑️</button></div>`).join('')||'<div class="empty">Nenhum gasto avulso no período.</div>';}
+    function renderDashboard(){const[a,b]=periodRange(),bs=budgetHistory.filter(x=>inPeriod(x.date,a,b)),es=expenses.filter(x=>inPeriod(x.date,a,b));document.getElementById('dash-period-label').textContent=a.toLocaleDateString('pt-BR')+' a '+b.toLocaleDateString('pt-BR');const sales=bs.reduce((s,x)=>s+budgetValue(x),0),received=bs.reduce((s,x)=>s+num(x.paid),0),mat=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type==='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),svc=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type!=='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),cats={};es.forEach(x=>cats[x.category]=(cats[x.category]||0)+num(x.value));cats['Materiais dos orçamentos']=(cats['Materiais dos orçamentos']||0)+mat;cats['Custos dos serviços']=(cats['Custos dos serviços']||0)+svc;const costs=Object.values(cats).reduce((s,x)=>s+x,0),profit=received-costs;document.getElementById('dash-sales').textContent=money(sales);document.getElementById('dash-received').textContent=money(received);document.getElementById('dash-pending').textContent=money(Math.max(0,sales-received));document.getElementById('dash-paid-count').textContent=bs.filter(x=>calculatedPaymentStatus(budgetValue(x),num(x.paid))==='Pago').length+' / '+bs.length;document.getElementById('dash-costs').textContent=money(costs);document.getElementById('dash-profit').textContent=money(profit);const max=Math.max(1,...Object.values(cats));document.getElementById('dash-breakdown').innerHTML=Object.entries(cats).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="break-row"><div class="break-head"><span>${k}</span><strong>${money(v)}</strong></div><div class="break-bar"><span style="width:${v/max*100}%"></span></div></div>`).join('')||'<div class="empty">Sem gastos no período.</div>';document.getElementById('expense-list').innerHTML=es.map(x=>`<div class="expense-row"><strong>${x.desc}</strong><small>${x.category} • ${parsePtDate(x.date).toLocaleDateString('pt-BR')} • ${money(x.value)}</small><button class="mini-delete" onclick="deleteExpense(${x.id})">🗑️</button></div>`).join('')||'<div class="empty">Nenhum gasto avulso no período.</div>';}
     function backupPayload(){return{app:'CRICORREA Orçamentos',version:4,budgets:budgetHistory,expenses,exportedAt:new Date().toISOString()};}
     function exportBackup(){const blob=new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cricorrea-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);}
     function openBackupDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('cricorrea-cloud-backup',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('handles'))r.result.createObjectStore('handles')};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
