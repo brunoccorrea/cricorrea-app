@@ -101,42 +101,13 @@
     .type-selector,.period-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}.type-btn,.period-btn{padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--primary);font-weight:800;cursor:pointer}.type-btn.active,.period-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
     .period-selector{grid-template-columns:repeat(4,1fr)}.dashboard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}.metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px}.metric small{display:block;color:var(--text-muted);font-size:.7rem;font-weight:800;text-transform:uppercase}.metric strong{display:block;font-size:1.12rem;margin-top:5px;color:var(--primary)}.metric.good strong{color:var(--success)}.metric.bad strong{color:var(--danger)}.expense-row{position:relative;border-bottom:1px dashed var(--border);padding:9px 38px 9px 0}.expense-row:last-child{border:0}.expense-row small{display:block;color:var(--text-muted)}.mini-delete{position:absolute;right:0;top:8px;border:0;border-radius:6px;padding:6px;background:var(--danger);color:#fff}.break-row{margin:8px 0}.break-head{display:flex;justify-content:space-between;font-size:.84rem}.break-bar{height:8px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin-top:4px}.break-bar span{display:block;height:100%;background:var(--secondary)}.item-actions{position:absolute;right:8px;top:8px;display:flex;gap:4px}.btn-mini{border:0;border-radius:6px;padding:6px;color:#fff}.btn-edit{background:var(--primary)}@media(max-width:420px){.period-selector{grid-template-columns:1fr 1fr}}
 
-    /* Tela de autenticação Firebase */
-    #auth-loading, #login-screen { position: fixed; inset: 0; z-index: 5000; background: linear-gradient(145deg,#eef3f9,#f8fafc); display: flex; align-items: center; justify-content: center; padding: 18px; }
-    #login-screen { display: none; }
-    .login-card { width: 100%; max-width: 390px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 18px 50px rgba(24,46,78,.18); border-top: 6px solid var(--secondary); }
-    .login-logo { text-align: center; margin-bottom: 18px; }
-    .login-logo strong { display: block; color: var(--primary); font-size: 1.45rem; letter-spacing: .5px; }
-    .login-logo span { color: var(--secondary); font-size: .82rem; font-weight: 800; }
-    .login-help { color: var(--text-muted); font-size: .78rem; text-align: center; margin: 8px 0; line-height: 1.4; }
-    .login-error { display: none; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 7px; padding: 9px; margin: 8px 0; font-size: .8rem; }
-    .login-success { display: none; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 7px; padding: 9px; margin: 8px 0; font-size: .8rem; }
-    .spinner { width: 38px; height: 38px; border: 4px solid #dbe4ef; border-top-color: var(--secondary); border-radius: 50%; animation: spin .8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #app-content { display: none; }
-    .user-bar { max-width: 600px; margin: 0 auto 10px; padding: 7px 10px; background: #eef3f9; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .75rem; color: var(--primary); }
-    .btn-logout { border: 0; background: var(--danger); color: #fff; border-radius: 6px; padding: 7px 10px; font-weight: 800; cursor: pointer; }
+    #auth-loading,#login-screen{position:fixed;inset:0;z-index:5000;background:linear-gradient(145deg,#eef3f9,#f8fafc);display:flex;align-items:center;justify-content:center;padding:18px}#login-screen{display:none}.login-card{width:100%;max-width:390px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 18px 50px rgba(24,46,78,.18);border-top:6px solid var(--secondary)}.login-logo{text-align:center;margin-bottom:18px}.login-logo strong{display:block;color:var(--primary);font-size:1.45rem}.login-logo span{color:var(--secondary);font-size:.82rem;font-weight:800}.login-msg{display:none;border-radius:7px;padding:9px;margin:8px 0;font-size:.8rem}.login-error{color:#991b1b;background:#fef2f2;border:1px solid #fecaca}.login-success{color:#166534;background:#f0fdf4;border:1px solid #bbf7d0}.spinner{width:38px;height:38px;border:4px solid #dbe4ef;border-top-color:var(--secondary);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}#app-content{display:none}.user-bar{max-width:600px;margin:0 auto 10px;padding:7px 10px;background:#eef3f9;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.75rem;color:var(--primary)}.btn-logout{border:0;background:var(--danger);color:#fff;border-radius:6px;padding:7px 10px;font-weight:800;cursor:pointer}
   </style>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
 </head>
-<body>
-  <div id="auth-loading" aria-live="polite"><div style="text-align:center"><div class="spinner" style="margin:auto"></div><div class="login-help" style="margin-top:12px">Verificando acesso...</div></div></div>
-  <section id="login-screen" aria-label="Acesso ao aplicativo">
-    <form id="login-form" class="login-card">
-      <div class="login-logo"><strong>👑 CRICORREA</strong><span>ACESSO AO SISTEMA</span></div>
-      <div class="form-group"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required placeholder="seuemail@exemplo.com"></div>
-      <div class="form-group"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6" placeholder="Digite sua senha"></div>
-      <div id="login-error" class="login-error" role="alert"></div>
-      <div id="login-success" class="login-success" role="status"></div>
-      <button id="login-button" type="submit" class="btn btn-primary">🔐 Entrar</button>
-      <button id="reset-password-button" type="button" class="btn btn-outline">Esqueci minha senha</button>
-      <div class="login-help">Não há cadastro público. Somente usuários criados no Firebase podem acessar.</div>
-    </form>
-  </section>
-
-  <div class="container" id="app-content">
-    <div class="user-bar"><span>Conectado: <strong id="logged-user"></strong></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
+<body><div id="auth-loading"><div style="text-align:center"><div class="spinner"></div><div style="margin-top:10px">Verificando acesso...</div></div></div><section id="login-screen"><form id="login-form" class="login-card"><div class="login-logo"><strong>👑 CRICORREA</strong><span>ACESSO AO SISTEMA</span></div><div class="form-group"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div><div class="form-group"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6"></div><div id="login-error" class="login-msg login-error"></div><div id="login-success" class="login-msg login-success"></div><button id="login-button" type="submit" class="btn btn-primary">🔐 Entrar</button><button id="reset-button" type="button" class="btn btn-outline">Esqueci minha senha</button><div style="font-size:.75rem;color:#64748b;text-align:center;margin-top:9px">Somente usuários criados no Firebase podem acessar.</div></form></section>
+  <div class="container" id="app-content"><div class="user-bar"><span>Conectado: <strong id="logged-user"></strong></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
     <div class="top-nav">
       <button type="button" class="nav-btn active" id="btn-nav-editor" onclick="switchTab('editor')">➕ Novo Orçamento</button>
       <button type="button" class="nav-btn" id="btn-nav-history" onclick="switchTab('history')">🔍 Histórico</button>
@@ -572,92 +543,17 @@
 
     fillForm();
   </script>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyD-1IJtcu3hH06I1Z3GTLEALTE29uZGMg",
-      authDomain: "cricorrea-app.firebaseapp.com",
-      projectId: "cricorrea-app",
-      storageBucket: "cricorrea-app.firebasestorage.app",
-      messagingSenderId: "129894221936",
-      appId: "1:129894221936:web:10da3bc9cae3b843f6ccb5",
-      measurementId: "G-477PHM36BP"
-    };
-
-    const firebaseApp = initializeApp(firebaseConfig);
-    const auth = getAuth(firebaseApp);
-    const loading = document.getElementById('auth-loading');
-    const loginScreen = document.getElementById('login-screen');
-    const appContent = document.getElementById('app-content');
-    const form = document.getElementById('login-form');
-    const emailInput = document.getElementById('login-email');
-    const passwordInput = document.getElementById('login-password');
-    const errorBox = document.getElementById('login-error');
-    const successBox = document.getElementById('login-success');
-    const loginButton = document.getElementById('login-button');
-
-    function showMessage(box, text) {
-      errorBox.style.display = 'none'; successBox.style.display = 'none';
-      box.textContent = text; box.style.display = 'block';
-    }
-    function friendlyError(code) {
-      const messages = {
-        'auth/invalid-credential': 'E-mail ou senha incorretos.',
-        'auth/invalid-email': 'Digite um e-mail válido.',
-        'auth/user-disabled': 'Este usuário foi desativado.',
-        'auth/too-many-requests': 'Muitas tentativas. Aguarde e tente novamente.',
-        'auth/network-request-failed': 'Falha de conexão. Verifique a internet.',
-        'auth/missing-password': 'Digite a senha.',
-        'auth/unauthorized-domain': 'Este endereço ainda não está autorizado no Firebase.'
-      };
-      return messages[code] || 'Não foi possível entrar. Verifique os dados e tente novamente.';
-    }
-
-    await setPersistence(auth, browserLocalPersistence);
-
-    onAuthStateChanged(auth, user => {
-      loading.style.display = 'none';
-      if (user) {
-        loginScreen.style.display = 'none';
-        appContent.style.display = 'block';
-        document.getElementById('logged-user').textContent = user.email || 'Usuário autenticado';
-      } else {
-        appContent.style.display = 'none';
-        loginScreen.style.display = 'flex';
-        passwordInput.value = '';
-      }
-    });
-
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      errorBox.style.display = 'none'; successBox.style.display = 'none';
-      loginButton.disabled = true; loginButton.textContent = 'Entrando...';
-      try {
-        await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
-      } catch (error) {
-        showMessage(errorBox, friendlyError(error.code));
-      } finally {
-        loginButton.disabled = false; loginButton.textContent = '🔐 Entrar';
-      }
-    });
-
-    document.getElementById('reset-password-button').addEventListener('click', async () => {
-      const email = emailInput.value.trim();
-      if (!email) return showMessage(errorBox, 'Digite seu e-mail primeiro.');
-      try {
-        await sendPasswordResetEmail(auth, email);
-        showMessage(successBox, 'E-mail de redefinição enviado. Verifique também a caixa de spam.');
-      } catch (error) {
-        showMessage(errorBox, friendlyError(error.code));
-      }
-    });
-
-    document.getElementById('logout-button').addEventListener('click', async () => {
-      try { await signOut(auth); } catch (error) { alert('Não foi possível sair. Tente novamente.'); }
-    });
-  </script>
-</body>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import{getAuth,setPersistence,browserLocalPersistence,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from"https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+const firebaseConfig={apiKey:"AIzaSyD-1IJtcu3hH06I1Z3GTLEALTE29uZGMg",authDomain:"cricorrea-app.firebaseapp.com",projectId:"cricorrea-app",storageBucket:"cricorrea-app.firebasestorage.app",messagingSenderId:"129894221936",appId:"1:129894221936:web:10da3bc9cae3b843f6ccb5",measurementId:"G-477PHM36BP"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),loading=document.getElementById('auth-loading'),screen=document.getElementById('login-screen'),content=document.getElementById('app-content'),form=document.getElementById('login-form'),email=document.getElementById('login-email'),password=document.getElementById('login-password'),err=document.getElementById('login-error'),ok=document.getElementById('login-success'),loginBtn=document.getElementById('login-button');
+function msg(box,text){err.style.display=ok.style.display='none';box.textContent=text;box.style.display='block'}
+function explain(e){const m={'auth/invalid-credential':'E-mail ou senha incorretos.','auth/invalid-email':'E-mail inválido.','auth/user-disabled':'Usuário desativado.','auth/too-many-requests':'Muitas tentativas. Aguarde e tente novamente.','auth/network-request-failed':'Falha de conexão. Verifique a internet.','auth/operation-not-allowed':'O login por e-mail/senha não está ativado no Firebase.','auth/unauthorized-domain':'O domínio do GitHub Pages não está autorizado no Firebase.','auth/api-key-not-valid':'A chave do Firebase é inválida.'};return(m[e.code]||'Erro do Firebase: '+(e.code||e.message))}
+try{await setPersistence(auth,browserLocalPersistence)}catch(e){msg(err,explain(e))}
+onAuthStateChanged(auth,u=>{loading.style.display='none';if(u){screen.style.display='none';content.style.display='block';document.getElementById('logged-user').textContent=u.email||'Usuário'}else{content.style.display='none';screen.style.display='flex'}});
+form.addEventListener('submit',async e=>{e.preventDefault();loginBtn.disabled=true;loginBtn.textContent='Entrando...';try{await signInWithEmailAndPassword(auth,email.value.trim(),password.value)}catch(x){msg(err,explain(x))}finally{loginBtn.disabled=false;loginBtn.textContent='🔐 Entrar'}});
+document.getElementById('reset-button').addEventListener('click',async()=>{if(!email.value.trim())return msg(err,'Digite seu e-mail primeiro.');try{await sendPasswordResetEmail(auth,email.value.trim());msg(ok,'E-mail de redefinição enviado. Verifique também o spam.')}catch(x){msg(err,explain(x))}});
+document.getElementById('logout-button').addEventListener('click',()=>signOut(auth));
+</script></body>
 </html>
