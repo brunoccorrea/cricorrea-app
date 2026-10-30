@@ -171,7 +171,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 9 • envio do mesmo PDF da impressão</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 10 • envio automático do modelo de impressão</div>
       </div>
 
       <div class="card">
@@ -193,12 +193,10 @@
         </div>
         <button type="button" class="btn btn-primary" onclick="saveCurrentBudget()">💾 Salvar Orçamento</button>
         <div class="share-actions">
-          <button type="button" class="btn btn-whatsapp" onclick="startExactPrintShare()">📤 Gerar PDF igual à impressão</button>
+          <button type="button" id="auto-whatsapp-pdf" class="btn btn-whatsapp" onclick="sharePrintModelPDF()">📤 Enviar orçamento pelo WhatsApp</button>
           <button type="button" class="btn btn-pix" onclick="sendPixCharge()">💠 Cobrar PIX pelo WhatsApp</button>
-          <button type="button" class="btn btn-whatsapp" onclick="document.getElementById('exact-pdf-file').click()">📎 Enviar PDF salvo</button>
-          <input id="exact-pdf-file" type="file" accept="application/pdf" style="display:none" onchange="shareExactSavedPdf(event)">
         </div>
-        <div class="pix-note"><strong>PDF idêntico ao botão Imprimir:</strong> primeiro toque em “Gerar PDF igual à impressão” e salve. Depois toque em “Enviar PDF salvo” e escolha o arquivo.</div>
+        <div class="pix-note">O aplicativo gera automaticamente o mesmo modelo visual do botão Imprimir / Salvar PDF e abre o compartilhamento.</div>
         <button type="button" class="btn btn-secondary" onclick="copyWhatsAppMessage()">📱 Copiar resumo p/ WhatsApp</button>
         <button type="button" class="btn btn-outline" onclick="printBudget()">📄 Imprimir / Salvar PDF</button>
         <button type="button" class="btn btn-outline" onclick="newBudget()">🆕 Limpar / Novo orçamento</button>
@@ -652,22 +650,66 @@
       y-=55;page.drawLine({start:{x:M+40,y},end:{x:M+220,y},thickness:.7,color:slate});page.drawLine({start:{x:W-M-220,y},end:{x:W-M-40,y},thickness:.7,color:slate});page.drawText('Prestador do Serviço',{x:M+82,y:y-14,size:7.5,font:regular,color:slate});page.drawText('Cliente',{x:W-M-150,y:y-14,size:7.5,font:regular,color:slate});drawFooter();
       const bytes=await pdfDoc.save({useObjectStreams:false});if(!bytes||bytes.length<2500)throw new Error('PDF gerado sem dados suficientes.');if(String.fromCharCode(...bytes.slice(0,4))!=='%PDF')throw new Error('Arquivo PDF invalido.');const blob=new Blob([bytes],{type:'application/pdf'});return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf',lastModified:Date.now()});
     }
-    function startExactPrintShare(){
-      syncFormToBudget();
-      if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
-      alert('Na próxima tela, escolha “Salvar como PDF” e toque no botão azul de PDF. Depois volte ao aplicativo e use “Enviar PDF salvo”.');
-      printBudget();
+    function collectPrintCss(){
+      const rules=[];
+      for(const sheet of Array.from(document.styleSheets)){
+        try{
+          for(const rule of Array.from(sheet.cssRules||[])){
+            if(rule.type===CSSRule.MEDIA_RULE&&String(rule.conditionText).toLowerCase().includes('print')){
+              for(const inner of Array.from(rule.cssRules||[])){
+                if(inner.type!==CSSRule.PAGE_RULE)rules.push(inner.cssText);
+              }
+            }
+          }
+        }catch(error){console.warn('Não foi possível ler uma folha de estilos',error);}
+      }
+      return rules.join('\n');
     }
-    async function shareExactSavedPdf(event){
-      const input=event.target,file=input.files&&input.files[0];
-      if(!file)return;
-      if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){input.value='';return alert('Selecione o arquivo PDF que foi salvo pela tela de impressão.');}
-      const data={files:[file],title:'Orçamento CRICORREA',text:`Orçamento ${currentBudget.id} - ${currentBudget.client||'Cliente'} - ${money(budgetTotal(currentBudget))}`};
+    async function createExactPrintPdfFile(){
+      syncFormToBudget();
+      if(typeof html2canvas!=='function')throw new Error('Renderizador do orçamento não carregou. Atualize com internet.');
+      if(!window.jspdf?.jsPDF)throw new Error('Gerador de PDF não carregou. Atualize com internet.');
+      preparePrintDocument();
+      const source=document.getElementById('print-document');
+      if(!source||!source.children.length)throw new Error('O modelo de impressão não foi montado.');
+      const style=document.createElement('style');
+      style.id='temporary-exact-print-style';
+      style.textContent=collectPrintCss()+`\nhtml,body{margin:0!important;padding:0!important;background:#fff!important;}#print-document{display:block!important;position:fixed!important;left:0!important;top:0!important;width:210mm!important;min-height:297mm!important;padding:12mm!important;box-sizing:border-box!important;background:#fff!important;color:#111827!important;z-index:2147483647!important;overflow:visible!important;}`;
+      document.head.appendChild(style);
+      const oldOverflow=document.documentElement.style.overflow;
+      document.documentElement.style.overflow='hidden';
       try{
-        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share(data);}
-        else alert('Este navegador não permite compartilhar arquivos diretamente. Abra o PDF salvo e use o botão Compartilhar do celular para escolher o WhatsApp.');
-      }catch(error){if(error.name!=='AbortError')alert('Não foi possível compartilhar: '+error.message);}
-      finally{input.value='';}
+        if(document.fonts?.ready)await document.fonts.ready;
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        const canvas=await html2canvas(source,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,windowWidth:source.scrollWidth,windowHeight:source.scrollHeight});
+        if(!canvas.width||!canvas.height)throw new Error('A captura do orçamento ficou vazia.');
+        // Detect blank output by sampling non-white pixels.
+        const ctx=canvas.getContext('2d',{willReadFrequently:true}),sample=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+        let colored=0;for(let i=0;i<sample.length;i+=Math.max(4,Math.floor(sample.length/24000/4)*4)){if(sample[i]<245||sample[i+1]<245||sample[i+2]<245)colored++;if(colored>80)break;}
+        if(colored<=80)throw new Error('A captura do orçamento ficou em branco.');
+        const {jsPDF}=window.jspdf,pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),pagePx=Math.floor(canvas.width*(297/210));
+        let offset=0,pageIndex=0;
+        while(offset<canvas.height){
+          const h=Math.min(pagePx,canvas.height-offset),slice=document.createElement('canvas');slice.width=canvas.width;slice.height=h;slice.getContext('2d').fillStyle='#fff';slice.getContext('2d').fillRect(0,0,slice.width,slice.height);slice.getContext('2d').drawImage(canvas,0,offset,canvas.width,h,0,0,canvas.width,h);
+          if(pageIndex>0)pdf.addPage('a4','portrait');
+          const image=slice.toDataURL('image/jpeg',0.96),heightMm=h*210/canvas.width;pdf.addImage(image,'JPEG',0,0,210,heightMm,undefined,'FAST');
+          offset+=h;pageIndex++;
+        }
+        const blob=pdf.output('blob');if(!blob||blob.size<5000)throw new Error('O PDF profissional foi gerado sem conteúdo suficiente.');
+        return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf',lastModified:Date.now()});
+      }finally{style.remove();document.documentElement.style.overflow=oldOverflow;}
+    }
+    async function sharePrintModelPDF(){
+      syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
+      const button=document.getElementById('auto-whatsapp-pdf'),original=button?.textContent;
+      if(button){button.disabled=true;button.textContent='Gerando PDF profissional...';}
+      try{
+        const file=await createExactPrintPdfFile();
+        const data={files:[file],title:'Orçamento CRICORREA',text:`Orçamento ${currentBudget.id} - ${currentBudget.client||'Cliente'} - ${money(budgetTotal(currentBudget))}`};
+        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share(data);return;}
+        const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);openWhatsApp(data.text+'\n\nO PDF profissional foi baixado. Anexe o arquivo nesta conversa.');
+      }catch(error){if(error.name!=='AbortError')alert('Não foi possível gerar o PDF profissional: '+error.message);}
+      finally{if(button){button.disabled=false;button.textContent=original;}}
     }
     async function shareBudgetPDF(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
@@ -687,7 +729,7 @@
     function sendPixCharge(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione itens ao orçamento primeiro.');if(!pixSettings.key)return alert('Configure a chave PIX no Dashboard antes de enviar a cobrança.');const text=buildPixMessage();if(!text)return alert('Este orçamento já está marcado como pago.');openWhatsApp(text,currentBudget.phone);
     }
-    async function shareStoredBudgetPDF(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();startExactPrintShare();}
+    async function shareStoredBudgetPDF(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();await sharePrintModelPDF();}
     function sendStoredPixCharge(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();sendPixCharge();}
     function parsePtDate(v){if(!v)return null;if(v.includes('/')){const p=v.split('/');return new Date(+p[2],+p[1]-1,+p[0]);}const p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
     function periodRange(){const r=parsePtDate(document.getElementById('dash-reference').value)||new Date();let a=new Date(r),b=new Date(r);if(dashboardPeriod==='week'){const n=(r.getDay()+6)%7;a.setDate(r.getDate()-n);b=new Date(a);b.setDate(a.getDate()+6);}else if(dashboardPeriod==='month'){a=new Date(r.getFullYear(),r.getMonth(),1);b=new Date(r.getFullYear(),r.getMonth()+1,0);}else if(dashboardPeriod==='year'){a=new Date(r.getFullYear(),0,1);b=new Date(r.getFullYear(),11,31);}return[a,b];}
