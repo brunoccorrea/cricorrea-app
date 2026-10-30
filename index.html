@@ -125,6 +125,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body><div id="auth-loading"><div style="text-align:center"><div class="spinner"></div><div style="margin-top:10px">Verificando acesso...</div></div></div><section id="login-screen"><form id="login-form" class="login-card"><div class="login-logo"><strong>👑 CRICORREA</strong><span>ACESSO AO SISTEMA</span></div><div class="form-group"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div><div class="form-group"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6"></div><div id="login-error" class="login-msg login-error"></div><div id="login-success" class="login-msg login-success"></div><button id="login-button" type="submit" class="btn btn-primary">🔐 Entrar</button><button id="reset-button" type="button" class="btn btn-outline">Esqueci minha senha</button><div style="font-size:.75rem;color:#64748b;text-align:center;margin-top:9px">Somente usuários criados no Firebase podem acessar.</div></form></section>
   <div class="container" id="app-content"><div class="user-bar"><span>Conectado: <strong id="logged-user"></strong><br><small id="sync-status">☁️ Aguardando sincronização</small></span><button type="button" class="btn-logout" id="logout-button">Sair</button></div>
@@ -171,7 +172,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 10 • envio automático do modelo de impressão</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 10.1 • renderizador PDF carregado</div>
       </div>
 
       <div class="card">
@@ -667,7 +668,7 @@
     }
     async function createExactPrintPdfFile(){
       syncFormToBudget();
-      if(typeof html2canvas!=='function')throw new Error('Renderizador do orçamento não carregou. Atualize com internet.');
+      if(typeof window.html2canvas!=='function')throw new Error('O renderizador html2canvas não carregou. Confira a internet e recarregue a página.');
       if(!window.jspdf?.jsPDF)throw new Error('Gerador de PDF não carregou. Atualize com internet.');
       preparePrintDocument();
       const source=document.getElementById('print-document');
@@ -681,7 +682,7 @@
       try{
         if(document.fonts?.ready)await document.fonts.ready;
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-        const canvas=await html2canvas(source,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,windowWidth:source.scrollWidth,windowHeight:source.scrollHeight});
+        const canvas=await window.html2canvas(source,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,windowWidth:source.scrollWidth,windowHeight:source.scrollHeight});
         if(!canvas.width||!canvas.height)throw new Error('A captura do orçamento ficou vazia.');
         // Detect blank output by sampling non-white pixels.
         const ctx=canvas.getContext('2d',{willReadFrequently:true}),sample=ctx.getImageData(0,0,canvas.width,canvas.height).data;
