@@ -172,7 +172,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 10.4 • link PIX com botão copiar</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 10.5 • chave PIX em mensagem separada</div>
       </div>
 
       <div class="card">
@@ -196,6 +196,7 @@
         <div class="share-actions">
           <button type="button" id="auto-whatsapp-pdf" class="btn btn-whatsapp" onclick="sharePrintModelPDF()">📤 Enviar orçamento pelo WhatsApp</button>
           <button type="button" class="btn btn-pix" onclick="sendPixCharge()">💠 Cobrar PIX pelo WhatsApp</button>
+          <button type="button" class="btn btn-outline" onclick="sendPixKeyOnly()">📋 Enviar somente a chave PIX</button>
         </div>
         <div class="pix-note">O aplicativo gera automaticamente o mesmo modelo visual do botão Imprimir / Salvar PDF e abre o compartilhamento.</div>
         <button type="button" class="btn btn-secondary" onclick="copyWhatsAppMessage()">📱 Copiar resumo p/ WhatsApp</button>
@@ -726,25 +727,13 @@
       const configured=String(pixSettings.key||'51157076000166').trim();
       return configured.replace(/\D/g,'')||configured;
     }
-    function getPixCopyKey(){
-      const configured=String(pixSettings.key||'51157076000166').trim();
-      return configured.replace(/\D/g,'')||configured;
-    }
-    function buildPixPaymentLink(balance){
-      const base=new URL('pix.html',window.location.href);
-      base.searchParams.set('key',getPixCopyKey());
-      base.searchParams.set('amount',String(balance));
-      base.searchParams.set('budget',currentBudget.id||'');
-      base.searchParams.set('client',currentBudget.client||'');
-      return base.href;
-    }
     function buildPixMessage(){
       syncFormToBudget();
       const total=budgetTotal(currentBudget),paid=num(currentBudget.paid),balance=Math.max(0,total-paid);
       if(balance<=0)return null;
       const client=(currentBudget.client||'').trim(),greeting=client?`Olá, ${client}! 👋`:'Olá! 👋';
-      const holder=(pixSettings.holder||'CRICORREA').trim(),paymentLink=buildPixPaymentLink(balance);
-      return `${greeting}\n\nTudo bem? Segue a cobrança referente ao *orçamento ${currentBudget.id}* da CRICORREA.\n\n🧾 *Resumo da cobrança*\n• Valor do orçamento: ${money(total)}\n• Valor já pago: ${money(paid)}\n• *Saldo para pagamento: ${money(balance)}*\n\n💠 *Pagamento via PIX*\nFavorecido: *${holder}*\nTipo da chave: *CNPJ*\n\n👇 *Toque no link para abrir a página de pagamento e copiar a chave PIX com um botão:*\n${paymentLink}\n\nApós o pagamento, por favor envie o comprovante por esta conversa. Obrigado pela confiança! 🙏\n\n_CRICORREA • Marido de Aluguel_`;
+      const holder=(pixSettings.holder||'CRICORREA').trim();
+      return `${greeting}\n\nTudo bem? Segue a cobrança referente ao *orçamento ${currentBudget.id}* da CRICORREA.\n\n🧾 *Resumo da cobrança*\n• Valor do orçamento: ${money(total)}\n• Valor já pago: ${money(paid)}\n• *Saldo para pagamento: ${money(balance)}*\n\n💠 *Pagamento via PIX*\nFavorecido: *${holder}*\nTipo da chave: *CNPJ*\n\nA chave PIX será enviada logo abaixo, em uma mensagem separada, para facilitar a cópia.\n\nApós o pagamento, por favor envie o comprovante por esta conversa. Obrigado pela confiança! 🙏\n\n_CRICORREA • Marido de Aluguel_`;
     }
     async function copyTextSafely(text){
       if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true;}
@@ -756,6 +745,12 @@
       if(!pixSettings.key)return alert('Configure a chave PIX no Dashboard antes de enviar a cobrança.');
       const text=buildPixMessage();if(!text)return alert('Este orçamento já está marcado como pago.');
       openWhatsApp(text,currentBudget.phone);
+    }
+    function sendPixKeyOnly(){
+      syncFormToBudget();
+      if(!pixSettings.key)return alert('Configure a chave PIX no Dashboard antes de enviar.');
+      const key=getPixCopyKey();
+      openWhatsApp(key,currentBudget.phone);
     }
     async function shareStoredBudgetPDF(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();await sharePrintModelPDF();}
     function sendStoredPixCharge(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();sendPixCharge();}
