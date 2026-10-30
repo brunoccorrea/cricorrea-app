@@ -171,7 +171,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 6 • PDF validado e nuvem manual</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 7 • PDF profissional igual à impressão</div>
       </div>
 
       <div class="card">
@@ -616,23 +616,38 @@
       syncFormToBudget();
       if(!window.PDFLib)throw new Error('Gerador PDFLib não carregou. Abra o aplicativo com internet e atualize.');
       const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
-      const pdfDoc=await PDFDocument.create();
-      pdfDoc.setTitle(`Orcamento ${currentBudget.id}`);pdfDoc.setAuthor('CRICORREA');pdfDoc.setSubject('Orcamento de servicos e materiais');
+      const pdfDoc=await PDFDocument.create();pdfDoc.setTitle(`Orcamento ${currentBudget.id}`);pdfDoc.setAuthor('CRICORREA - Marido de Aluguel');
       const regular=await pdfDoc.embedFont(StandardFonts.Helvetica),bold=await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      let page=pdfDoc.addPage([595.28,841.89]),y=800;
-      const addPage=()=>{page=pdfDoc.addPage([595.28,841.89]);y=800;};
-      const text=(value,size=10,isBold=false,color=rgb(.12,.16,.23),x=42)=>{const font=isBold?bold:regular,max=510,words=asciiPdfText(value).split(/\s+/);let line='';for(const word of words){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)>max&&line){if(y<55)addPage();page.drawText(line,{x,y,size,font,color});y-=size+4;line=word}else line=test}if(line){if(y<55)addPage();page.drawText(line,{x,y,size,font,color});y-=size+4}};
-      page.drawRectangle({x:0,y:755,width:595.28,height:86,color:rgb(.094,.18,.306)});page.drawText('CRICORREA',{x:42,y:806,size:24,font:bold,color:rgb(1,1,1)});page.drawText('MARIDO DE ALUGUEL',{x:42,y:786,size:11,font:bold,color:rgb(.95,.4,.12)});page.drawText('ORCAMENTO',{x:430,y:806,size:14,font:bold,color:rgb(1,1,1)});page.drawText(asciiPdfText(currentBudget.id),{x:430,y:786,size:9,font:regular,color:rgb(1,1,1)});y=725;
-      text('ORCAMENTO DE SERVICOS E MATERIAIS',16,true,rgb(.094,.18,.306));y-=4;text('Cliente: '+(currentBudget.client||'Nao informado'),11,true);text('Telefone: '+(currentBudget.phone||'-'));text('Endereco: '+(currentBudget.address||'-'));text('Data: '+(currentBudget.date||'-'));y-=6;
-      text('ITENS',12,true,rgb(.094,.18,.306));
-      (currentBudget.items||[]).forEach((it,i)=>{text(`${i+1}. ${it.desc}`,10,true);text(`${it.type||'Servico'} | ${it.category||''} | Qtd ${it.qty} x ${money(it.price)} = ${money(num(it.qty)*num(it.price))}`,9,false,rgb(.28,.33,.41));y-=3});
-      const totals=getTotals();y-=5;text('Subtotal: '+money(totals.subtotal),11,true);text('Deslocamento / visita: '+money(num(currentBudget.travel)),10);text('TOTAL GERAL: '+money(totals.total),15,true,rgb(.094,.18,.306));text('Ja pago: '+money(totals.paid));text('Saldo restante: '+money(totals.balance),12,true,totals.balance>0?rgb(.72,.11,.11):rgb(.08,.45,.22));text('Situacao: '+calculatedPaymentStatus(totals.total,totals.paid),10,true);
-      if(currentBudget.notes){y-=6;text('OBSERVACOES',11,true,rgb(.094,.18,.306));text(currentBudget.notes,9)}
-      y=Math.max(y-30,45);page.drawText('CRICORREA - Marido de Aluguel | (48) 98427-2764 | @cricorrea2',{x:100,y:30,size:8,font:regular,color:rgb(.28,.33,.41)});
-      const bytes=await pdfDoc.save({useObjectStreams:false});
-      if(!bytes||bytes.length<1800)throw new Error('PDF gerado sem dados suficientes.');
-      const signature=String.fromCharCode(...bytes.slice(0,4));if(signature!=='%PDF')throw new Error('Arquivo PDF invalido.');
-      const blob=new Blob([bytes],{type:'application/pdf'});return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf',lastModified:Date.now()});
+      const W=595.28,H=841.89,M=34,navy=rgb(.094,.18,.306),orange=rgb(.95,.40,.12),slate=rgb(.28,.33,.41),light=rgb(.94,.96,.98),border=rgb(.80,.84,.89),red=rgb(.72,.11,.11),green=rgb(.08,.45,.22);
+      let page,y;
+      const newPage=()=>{page=pdfDoc.addPage([W,H]);y=H-34;};newPage();
+      const fit=(txt,size,font,max)=>{let out='',line='';for(const word of asciiPdfText(txt).split(/\s+/)){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)>max&&line){out+=line+'\n';line=word}else line=test}return(out+line).split('\n')};
+      const drawText=(txt,x,yy,size=9,font=regular,color=rgb(.1,.13,.18),max=500)=>{const lines=fit(txt,size,font,max);lines.forEach((l,i)=>page.drawText(l,{x,y:yy-i*(size+2),size,font,color}));return lines.length*(size+2)};
+      const need=h=>{if(y-h<45){drawFooter();newPage();drawHeader(true)}};
+      const drawFooter=()=>{page.drawLine({start:{x:M,y:28},end:{x:W-M,y:28},thickness:.7,color:border});page.drawText('Orcamento de Servicos e Materiais',{x:M,y:15,size:7.5,font:regular,color:slate});page.drawText('CRICORREA',{x:W-M-55,y:15,size:7.5,font:bold,color:navy});};
+      const drawHeader=(compact=false)=>{const top=H-34;page.drawText('CRICORREA',{x:M,y:top,size:compact?18:22,font:bold,color:navy});page.drawText('MARIDO DE ALUGUEL',{x:M,y:top-16,size:9,font:bold,color:orange});page.drawText('Eletrica • Climatizacao • TI • Hidraulica • Cameras',{x:M,y:top-30,size:7.5,font:regular,color:slate});page.drawText('Criciuma e Regiao | (48) 98427-2764 | @cricorrea2',{x:M,y:top-41,size:7.5,font:regular,color:slate});page.drawText('ORCAMENTO DE SERVICOS',{x:W-M-145,y:top,size:10,font:bold,color:navy});page.drawText(asciiPdfText(currentBudget.id),{x:W-M-95,y:top-17,size:8,font:regular,color:slate});page.drawLine({start:{x:M,y:top-50},end:{x:W-M,y:top-50},thickness:2.2,color:navy});y=top-64;};
+      drawHeader();
+      // Same title block as print version
+      page.drawRectangle({x:M,y:y-42,width:W-2*M,height:42,color:navy});page.drawText('ORCAMENTO DE SERVICOS E MATERIAIS',{x:M+12,y:y-18,size:14,font:bold,color:rgb(1,1,1)});const cats=[...new Set((currentBudget.items||[]).map(i=>i.category))].join(' • ')||'Servicos gerais';drawText(cats,M+12,y-33,8.5,regular,rgb(1,1,1),W-2*M-24);y-=54;
+      // Metadata three columns
+      const totals=getTotals(),meta=[['DOCUMENTO','#'+currentBudget.id],['DATA',currentBudget.date],['STATUS',totals.balance>0?'Em andamento':'Quitado']],mw=(W-2*M)/3;
+      meta.forEach(([label,value],i)=>{const x=M+i*mw;page.drawRectangle({x,y:y-32,width:mw,height:32,borderColor:border,borderWidth:.7,color:rgb(1,1,1)});page.drawText(label,{x:x+8,y:y-11,size:6.5,font:bold,color:slate});page.drawText(asciiPdfText(value),{x:x+8,y:y-24,size:9,font:bold,color:navy});});y-=44;
+      // Client box
+      const clientLines=[`Cliente: ${currentBudget.client||'Nao informado'}`];if(currentBudget.phone)clientLines.push(`Telefone: ${currentBudget.phone}`);if(currentBudget.address)clientLines.push(`Endereco: ${currentBudget.address}`);const ch=12+clientLines.length*12;page.drawRectangle({x:M,y:y-ch,width:W-2*M,height:ch,borderColor:border,borderWidth:.8,color:rgb(1,1,1)});clientLines.forEach((t,i)=>page.drawText(asciiPdfText(t),{x:M+10,y:y-16-i*12,size:8.5,font:i===0?bold:regular,color:i===0?navy:slate}));y-=ch+12;
+      // Items table grouped by category; same data as print
+      const colX=[M,M+325,M+405,W-M],headerH=24;
+      const tableHeader=()=>{page.drawRectangle({x:M,y:y-headerH,width:W-2*M,height:headerH,color:navy});page.drawText('DESCRICAO DO SERVICO / MATERIAL',{x:M+7,y:y-16,size:7.6,font:bold,color:rgb(1,1,1)});page.drawText('QTD.',{x:colX[1]+7,y:y-16,size:7.6,font:bold,color:rgb(1,1,1)});page.drawText('VALOR',{x:colX[2]+7,y:y-16,size:7.6,font:bold,color:rgb(1,1,1)});y-=headerH;};tableHeader();
+      const grouped={};(currentBudget.items||[]).forEach(it=>(grouped[it.category||'Outros']??=[]).push(it));
+      for(const [category,items] of Object.entries(grouped)){need(34);page.drawRectangle({x:M,y:y-20,width:W-2*M,height:20,color:light,borderColor:border,borderWidth:.5});page.drawText(asciiPdfText(category),{x:M+7,y:y-14,size:8,font:bold,color:navy});y-=20;
+        for(const it of items){const descLines=fit(it.desc,8.5,bold,300),rowH=Math.max(27,descLines.length*10+14);need(rowH+5);if(y>H-90)tableHeader();page.drawRectangle({x:M,y:y-rowH,width:W-2*M,height:rowH,borderColor:border,borderWidth:.55,color:rgb(1,1,1)});page.drawLine({start:{x:colX[1],y},end:{x:colX[1],y:y-rowH},thickness:.5,color:border});page.drawLine({start:{x:colX[2],y},end:{x:colX[2],y:y-rowH},thickness:.5,color:border});descLines.forEach((l,i)=>page.drawText(l,{x:M+7,y:y-12-i*10,size:8.5,font:bold,color:rgb(.1,.13,.18)}));const note=it.isCortesia?'Cortesia - sem custo adicional':`${it.type||'Servico'} • ${money(it.price)} por unidade`;page.drawText(asciiPdfText(note),{x:M+7,y:y-rowH+5,size:6.8,font:regular,color:slate});page.drawText(`${it.qty} un.`,{x:colX[1]+9,y:y-16,size:8,font:regular,color:slate});page.drawText(asciiPdfText(money(num(it.qty)*num(it.price))),{x:colX[2]+7,y:y-16,size:8.5,font:bold,color:navy});y-=rowH;}
+      }
+      y-=12;need(118);
+      const courtesy=(currentBudget.items||[]).filter(i=>i.isCortesia);if(courtesy.length){page.drawRectangle({x:M,y:y-(22+courtesy.length*11),width:W-2*M,height:22+courtesy.length*11,color:rgb(1,.98,.92),borderColor:rgb(.98,.75,.35),borderWidth:.6});page.drawText('OBSERVACOES E CORTESIAS',{x:M+8,y:y-14,size:8,font:bold,color:navy});courtesy.forEach((it,i)=>page.drawText(asciiPdfText(`• Cortesia: ${it.desc} (${money(0)}).`),{x:M+8,y:y-27-i*11,size:7.5,font:regular,color:slate}));y-=32+courtesy.length*11;}
+      // Summary exactly follows print rows
+      const rows=[['Subtotal dos servicos',money(totals.subtotal)],['Deslocamento / taxa de visita',money(totals.travel)],['VALOR TOTAL DO ORCAMENTO',money(totals.total)],[`Pagamento parcial (${currentBudget.paidMethod})`,`PAGO - ${money(totals.paid)}`],['SALDO RESTANTE A PAGAR',money(totals.balance)]];
+      rows.forEach(([label,value],i)=>{const h=i===2||i===4?26:22,bg=i===2?navy:(i===4?rgb(1,.94,.94):rgb(1,1,1)),fg=i===2?rgb(1,1,1):(i===4?red:slate);page.drawRectangle({x:M+150,y:y-h,width:W-2*M-150,height:h,color:bg,borderColor:border,borderWidth:.5});page.drawText(asciiPdfText(label),{x:M+158,y:y-h+8,size:i===2||i===4?8.5:7.5,font:i===2||i===4?bold:regular,color:fg});page.drawText(asciiPdfText(value),{x:W-M-110,y:y-h+8,size:i===2||i===4?9:8,font:bold,color:fg});y-=h;});
+      y-=55;page.drawLine({start:{x:M+40,y},end:{x:M+220,y},thickness:.7,color:slate});page.drawLine({start:{x:W-M-220,y},end:{x:W-M-40,y},thickness:.7,color:slate});page.drawText('Prestador do Servico',{x:M+82,y:y-14,size:7.5,font:regular,color:slate});page.drawText('Cliente',{x:W-M-150,y:y-14,size:7.5,font:regular,color:slate});drawFooter();
+      const bytes=await pdfDoc.save({useObjectStreams:false});if(!bytes||bytes.length<2500)throw new Error('PDF gerado sem dados suficientes.');if(String.fromCharCode(...bytes.slice(0,4))!=='%PDF')throw new Error('Arquivo PDF invalido.');const blob=new Blob([bytes],{type:'application/pdf'});return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf',lastModified:Date.now()});
     }
     async function shareBudgetPDF(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
