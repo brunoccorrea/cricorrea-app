@@ -171,7 +171,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 8 • PDF igual ao modelo de impressão</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 9 • envio do mesmo PDF da impressão</div>
       </div>
 
       <div class="card">
@@ -193,9 +193,12 @@
         </div>
         <button type="button" class="btn btn-primary" onclick="saveCurrentBudget()">💾 Salvar Orçamento</button>
         <div class="share-actions">
-          <button type="button" class="btn btn-whatsapp" onclick="shareBudgetPDF()">📤 Enviar PDF pelo WhatsApp</button>
+          <button type="button" class="btn btn-whatsapp" onclick="startExactPrintShare()">📤 Gerar PDF igual à impressão</button>
           <button type="button" class="btn btn-pix" onclick="sendPixCharge()">💠 Cobrar PIX pelo WhatsApp</button>
+          <button type="button" class="btn btn-whatsapp" onclick="document.getElementById('exact-pdf-file').click()">📎 Enviar PDF salvo</button>
+          <input id="exact-pdf-file" type="file" accept="application/pdf" style="display:none" onchange="shareExactSavedPdf(event)">
         </div>
+        <div class="pix-note"><strong>PDF idêntico ao botão Imprimir:</strong> primeiro toque em “Gerar PDF igual à impressão” e salve. Depois toque em “Enviar PDF salvo” e escolha o arquivo.</div>
         <button type="button" class="btn btn-secondary" onclick="copyWhatsAppMessage()">📱 Copiar resumo p/ WhatsApp</button>
         <button type="button" class="btn btn-outline" onclick="printBudget()">📄 Imprimir / Salvar PDF</button>
         <button type="button" class="btn btn-outline" onclick="newBudget()">🆕 Limpar / Novo orçamento</button>
@@ -649,6 +652,23 @@
       y-=55;page.drawLine({start:{x:M+40,y},end:{x:M+220,y},thickness:.7,color:slate});page.drawLine({start:{x:W-M-220,y},end:{x:W-M-40,y},thickness:.7,color:slate});page.drawText('Prestador do Serviço',{x:M+82,y:y-14,size:7.5,font:regular,color:slate});page.drawText('Cliente',{x:W-M-150,y:y-14,size:7.5,font:regular,color:slate});drawFooter();
       const bytes=await pdfDoc.save({useObjectStreams:false});if(!bytes||bytes.length<2500)throw new Error('PDF gerado sem dados suficientes.');if(String.fromCharCode(...bytes.slice(0,4))!=='%PDF')throw new Error('Arquivo PDF invalido.');const blob=new Blob([bytes],{type:'application/pdf'});return new File([blob],`orcamento-${currentBudget.id}.pdf`,{type:'application/pdf',lastModified:Date.now()});
     }
+    function startExactPrintShare(){
+      syncFormToBudget();
+      if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
+      alert('Na próxima tela, escolha “Salvar como PDF” e toque no botão azul de PDF. Depois volte ao aplicativo e use “Enviar PDF salvo”.');
+      printBudget();
+    }
+    async function shareExactSavedPdf(event){
+      const input=event.target,file=input.files&&input.files[0];
+      if(!file)return;
+      if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){input.value='';return alert('Selecione o arquivo PDF que foi salvo pela tela de impressão.');}
+      const data={files:[file],title:'Orçamento CRICORREA',text:`Orçamento ${currentBudget.id} - ${currentBudget.client||'Cliente'} - ${money(budgetTotal(currentBudget))}`};
+      try{
+        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share(data);}
+        else alert('Este navegador não permite compartilhar arquivos diretamente. Abra o PDF salvo e use o botão Compartilhar do celular para escolher o WhatsApp.');
+      }catch(error){if(error.name!=='AbortError')alert('Não foi possível compartilhar: '+error.message);}
+      finally{input.value='';}
+    }
     async function shareBudgetPDF(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione pelo menos um item antes de gerar o PDF.');
       try{
@@ -667,7 +687,7 @@
     function sendPixCharge(){
       syncFormToBudget();if(!currentBudget.items.length)return alert('Adicione itens ao orçamento primeiro.');if(!pixSettings.key)return alert('Configure a chave PIX no Dashboard antes de enviar a cobrança.');const text=buildPixMessage();if(!text)return alert('Este orçamento já está marcado como pago.');openWhatsApp(text,currentBudget.phone);
     }
-    async function shareStoredBudgetPDF(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();await shareBudgetPDF();}
+    async function shareStoredBudgetPDF(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();startExactPrintShare();}
     function sendStoredPixCharge(id){const found=budgetHistory.find(b=>b.id===id);if(!found)return;currentBudget=JSON.parse(JSON.stringify(found));fillForm();sendPixCharge();}
     function parsePtDate(v){if(!v)return null;if(v.includes('/')){const p=v.split('/');return new Date(+p[2],+p[1]-1,+p[0]);}const p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
     function periodRange(){const r=parsePtDate(document.getElementById('dash-reference').value)||new Date();let a=new Date(r),b=new Date(r);if(dashboardPeriod==='week'){const n=(r.getDay()+6)%7;a.setDate(r.getDate()-n);b=new Date(a);b.setDate(a.getDate()+6);}else if(dashboardPeriod==='month'){a=new Date(r.getFullYear(),r.getMonth(),1);b=new Date(r.getFullYear(),r.getMonth()+1,0);}else if(dashboardPeriod==='year'){a=new Date(r.getFullYear(),0,1);b=new Date(r.getFullYear(),11,31);}return[a,b];}
