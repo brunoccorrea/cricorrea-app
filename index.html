@@ -119,6 +119,8 @@
     #pdf-render-document th,#pdf-render-document td{border:1px solid #cbd5e1;padding:7px;text-align:left}
     #pdf-render-document th{background:#182e4e;color:#fff}
     #pdf-render-document .print-total{font-size:18px;font-weight:900;color:#182e4e}
+
+    .top-nav{flex-wrap:wrap}.top-nav .nav-btn{min-width:calc(25% - 8px);max-width:none}.schedule-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px}.agenda-toolbar{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:10px}.agenda-toolbar button{border:1px solid var(--border);background:#fff;border-radius:8px;padding:9px;color:var(--primary);font-weight:800}.agenda-month{text-align:center;font-weight:900;color:var(--primary);text-transform:capitalize}.agenda-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.agenda-kpi{background:#fff;border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center}.agenda-kpi small{display:block;color:var(--text-muted);font-size:.65rem;font-weight:800;text-transform:uppercase}.agenda-kpi strong{display:block;color:var(--primary);font-size:1.05rem;margin-top:3px}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.calendar-weekday{text-align:center;color:var(--text-muted);font-size:.65rem;font-weight:800;padding:5px 0}.calendar-day{min-height:58px;border:1px solid var(--border);border-radius:7px;background:#fff;padding:5px;cursor:pointer;text-align:left;position:relative}.calendar-day.other{opacity:.35}.calendar-day.today{border:2px solid var(--secondary)}.calendar-day.selected{background:#eef3f9;border-color:var(--primary)}.calendar-day .day-number{font-weight:800;font-size:.76rem}.calendar-day .day-count{display:block;margin-top:5px;background:var(--primary);color:#fff;border-radius:999px;padding:2px 4px;font-size:.58rem;text-align:center}.calendar-day.has-events{background:#fff7ed}.agenda-filters{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}.agenda-filter{border:1px solid var(--border);background:#fff;color:var(--primary);padding:8px 4px;border-radius:8px;font-weight:800;font-size:.72rem}.agenda-filter.active{background:var(--primary);color:#fff}.appointment-card{background:#fff;border:1px solid var(--border);border-left:5px solid var(--secondary);border-radius:9px;padding:11px;margin-bottom:8px}.appointment-card.completed{border-left-color:var(--success);opacity:.8}.appointment-card.cancelled{border-left-color:var(--danger);opacity:.65}.appointment-time{font-weight:900;color:var(--primary);font-size:.95rem}.appointment-client{font-weight:800;margin-top:3px}.appointment-meta{font-size:.73rem;color:var(--text-muted);margin-top:3px;line-height:1.4}.appointment-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}.appointment-actions button{border:0;border-radius:6px;padding:8px 4px;font-size:.68rem;font-weight:800;cursor:pointer}.appointment-open{background:var(--primary);color:#fff}.appointment-whatsapp{background:#16a34a;color:#fff}.appointment-done{background:#dcfce7;color:#166534}.conflict-warning{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:7px;padding:7px;margin-top:6px;font-size:.72rem;font-weight:800}.schedule-chip{display:inline-block;background:#e0f2fe;color:#075985;border-radius:999px;padding:3px 7px;font-size:.68rem;font-weight:800;margin-top:5px}@media(max-width:520px){body{padding-top:116px}.top-nav .nav-btn{min-width:calc(50% - 8px)}.schedule-grid{grid-template-columns:1fr 1fr}.schedule-grid .schedule-date{grid-column:1/-1}.agenda-kpis{grid-template-columns:repeat(3,1fr)}.calendar-day{min-height:52px;padding:4px}.appointment-actions{grid-template-columns:1fr 1fr 1fr}}
   </style>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -133,6 +135,7 @@
       <button type="button" class="nav-btn active" id="btn-nav-editor" onclick="switchTab('editor')">➕ Novo Orçamento</button>
       <button type="button" class="nav-btn" id="btn-nav-history" onclick="switchTab('history')">🔍 Histórico</button>
       <button type="button" class="nav-btn" id="btn-nav-dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button type="button" class="nav-btn" id="btn-nav-agenda" onclick="switchTab('agenda')">📅 Agenda</button>
     </div>
 
     <div class="brand-card">
@@ -152,6 +155,17 @@
         <div class="form-group"><label for="client-address">Endereço</label><input type="text" id="client-address" placeholder="Rua, bairro e cidade"></div>
       </div>
 
+      <div class="card" id="schedule-card">
+        <div class="card-title"><span>📅 Agendamento do atendimento</span><span id="schedule-end-preview" class="badge">Sem horário</span></div>
+        <div class="schedule-grid">
+          <div class="form-group schedule-date"><label for="schedule-date">Data do atendimento</label><input type="date" id="schedule-date" onchange="updateSchedulePreview()"></div>
+          <div class="form-group"><label for="schedule-time">Horário combinado</label><input type="time" id="schedule-time" onchange="updateSchedulePreview()"></div>
+          <div class="form-group"><label for="schedule-duration">Duração estimada</label><select id="schedule-duration" onchange="updateSchedulePreview()"><option value="30">30 minutos</option><option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option><option value="180">3 horas</option><option value="240">4 horas</option><option value="480">Dia inteiro (8h)</option></select></div>
+        </div>
+        <div class="form-group"><label for="schedule-status">Status do atendimento</label><select id="schedule-status"><option>Agendado</option><option>Confirmado</option><option>Em andamento</option><option>Concluído</option><option>Cancelado</option></select></div>
+        <div class="form-group"><label for="schedule-notes">Observação do agendamento</label><input id="schedule-notes" placeholder="Ex.: cliente estará em casa após as 14h"></div>
+        <div id="schedule-conflict" class="conflict-warning" style="display:none"></div>
+      </div>
       <div class="card" id="item-entry-card">
         <div class="card-title">Adicionar Serviço / Material</div>
         <label>Tipo do item</label><div class="type-selector"><button type="button" id="type-service" class="type-btn active" onclick="selectItemType('Serviço')">🔧 Serviços</button><button type="button" id="type-material" class="type-btn" onclick="selectItemType('Material')">📦 Material</button></div><input type="hidden" id="item-type" value="Serviço">
@@ -172,7 +186,7 @@
         </datalist></div>
         <div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label for="item-qty">Qtd.</label><input type="number" id="item-qty" value="1" min="0.01" step="0.01"></div><div class="form-group" style="flex:1"><label for="item-cost">Custo unit. (R$)</label><input type="number" id="item-cost" min="0" step="0.01" placeholder="0,00"></div><div class="form-group" style="flex:1"><label for="item-price">Venda unit. (R$)</label><input type="number" id="item-price" min="0" step="0.01" placeholder="0,00"></div></div><input type="hidden" id="editing-item-index" value="-1">
         <div style="margin-top:4px"><label style="cursor:pointer;text-transform:none"><input type="checkbox" id="item-cortesia" style="width:auto"> Cortesia (R$ 0,00)</label></div>
-        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 10.5 • chave PIX em mensagem separada</div>
+        <button type="button" id="add-item-button-v3" class="btn btn-secondary" onclick="return forceAddItem(event)">+ Adicionar à Lista</button><div style="text-align:center;font-size:.65rem;color:#94a3b8;margin-top:4px">Versão 11 • agenda de atendimentos</div>
       </div>
 
       <div class="card">
@@ -209,6 +223,12 @@
       <div class="card" id="search-card"><div class="card-title">Procurar Orçamentos</div><input type="search" id="search-input" placeholder="Digite nº, cliente ou serviço..." oninput="renderHistory()"></div>
       <div id="history-cards-container"></div>
     </div>
+    <div id="tab-agenda" style="display:none">
+      <div class="agenda-kpis"><div class="agenda-kpi"><small>Atendimentos</small><strong id="agenda-count">0</strong></div><div class="agenda-kpi"><small>Tempo estimado</small><strong id="agenda-hours">0h</strong></div><div class="agenda-kpi"><small>Hoje</small><strong id="agenda-today-count">0</strong></div></div>
+      <div class="card"><div class="agenda-toolbar"><button type="button" onclick="changeAgendaMonth(-1)">‹</button><div id="agenda-month-label" class="agenda-month"></div><button type="button" onclick="changeAgendaMonth(1)">›</button></div><div class="calendar-grid" id="agenda-calendar"></div></div>
+      <div class="agenda-filters"><button type="button" id="agenda-filter-selected" class="agenda-filter active" onclick="setAgendaFilter('selected')">Dia selecionado</button><button type="button" id="agenda-filter-today" class="agenda-filter" onclick="setAgendaFilter('today')">Hoje</button><button type="button" id="agenda-filter-week" class="agenda-filter" onclick="setAgendaFilter('week')">Próximos 7 dias</button></div>
+      <div class="card"><div class="card-title"><span id="agenda-list-title">Atendimentos</span><span id="agenda-list-total" class="badge">0</span></div><div id="agenda-list"></div></div>
+    </div>
     <div id="tab-dashboard" style="display:none">
       <div class="period-selector"><button type="button" id="period-day" class="period-btn" onclick="setPeriod('day')">Hoje</button><button type="button" id="period-week" class="period-btn" onclick="setPeriod('week')">Semana</button><button type="button" id="period-month" class="period-btn active" onclick="setPeriod('month')">Mês</button><button type="button" id="period-year" class="period-btn" onclick="setPeriod('year')">Ano</button></div>
       <div class="card"><div class="form-group"><label for="dash-reference">Data de referência</label><input type="date" id="dash-reference" onchange="renderDashboard()"></div><div id="dash-period-label" class="item-cat"></div></div>
@@ -236,6 +256,9 @@
     const PIX_KEY = 'cricorrea_pix_settings';
     let expenses = JSON.parse(localStorage.getItem(EXPENSE_KEY) || '[]');
     let dashboardPeriod = 'month';
+    let agendaMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let agendaSelectedDate = new Date().toISOString().slice(0,10);
+    let agendaFilter = 'selected';
     let cloudDirectoryHandle = null;
     let pixSettings = JSON.parse(localStorage.getItem(PIX_KEY) || '{"key":"51157076000166","holder":"CRICORREA"}');
     let budgetHistory = loadHistory();
@@ -267,15 +290,15 @@
     }
 
     function createEmptyBudget() {
-      return { id: nextBudgetId(), date: new Date().toLocaleDateString('pt-BR'), client: '', phone: '', address: '', items: [], travel: 0, paid: 0, paidMethod: 'Pix', paymentStatus: 'Pendente' };
+      return { id: nextBudgetId(), date: new Date().toLocaleDateString('pt-BR'), client: '', phone: '', address: '', items: [], travel: 0, paid: 0, paidMethod: 'Pix', paymentStatus: 'Pendente', scheduleDate: '', scheduleTime: '', scheduleDuration: 60, scheduleStatus: 'Agendado', scheduleNotes: '' };
     }
 
     const money = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
     const num = value => Math.max(0, Number(value) || 0);
 
     function switchTab(tab) {
-      ['editor','history','dashboard'].forEach(name=>{const panel=document.getElementById('tab-'+name),button=document.getElementById('btn-nav-'+name);if(panel)panel.style.display=name===tab?'block':'none';if(button)button.classList.toggle('active',name===tab);});
-      if(tab==='history') renderHistory(); if(tab==='dashboard') renderDashboard();
+      ['editor','history','dashboard','agenda'].forEach(name=>{const panel=document.getElementById('tab-'+name),button=document.getElementById('btn-nav-'+name);if(panel)panel.style.display=name===tab?'block':'none';if(button)button.classList.toggle('active',name===tab);});
+      if(tab==='history') renderHistory(); if(tab==='dashboard') renderDashboard(); if(tab==='agenda') renderAgenda();
     }
     function selectItemType(type){document.getElementById('item-type').value=type;const serviceButton=document.getElementById('type-service'),materialButton=document.getElementById('type-material');if(serviceButton)serviceButton.classList.toggle('active',type==='Serviço');if(materialButton)materialButton.classList.toggle('active',type==='Material');if(type==='Material')document.getElementById('item-category').value='Materiais';}
     function quickAdd(category, description, price) {
@@ -391,6 +414,11 @@
       currentBudget.paid = num(document.getElementById('paid-amount').value);
       currentBudget.paidMethod = document.getElementById('paid-method').value;
       currentBudget.paymentStatus = calculatedPaymentStatus(budgetTotal(currentBudget), currentBudget.paid);
+      currentBudget.scheduleDate = document.getElementById('schedule-date').value;
+      currentBudget.scheduleTime = document.getElementById('schedule-time').value;
+      currentBudget.scheduleDuration = Number(document.getElementById('schedule-duration').value) || 60;
+      currentBudget.scheduleStatus = document.getElementById('schedule-status').value;
+      currentBudget.scheduleNotes = document.getElementById('schedule-notes').value.trim();
       currentBudget.date = currentBudget.date || new Date().toLocaleDateString('pt-BR');
     }
 
@@ -414,6 +442,12 @@
       document.getElementById('travel-cost').value = num(currentBudget.travel).toFixed(2);
       document.getElementById('paid-amount').value = num(currentBudget.paid).toFixed(2);
       document.getElementById('paid-method').value = currentBudget.paidMethod || 'Pix';
+      document.getElementById('schedule-date').value = currentBudget.scheduleDate || '';
+      document.getElementById('schedule-time').value = currentBudget.scheduleTime || '';
+      document.getElementById('schedule-duration').value = String(currentBudget.scheduleDuration || 60);
+      document.getElementById('schedule-status').value = currentBudget.scheduleStatus || 'Agendado';
+      document.getElementById('schedule-notes').value = currentBudget.scheduleNotes || '';
+      updateSchedulePreview();
       setPaymentStatus(currentBudget.paymentStatus || calculatedPaymentStatus(budgetTotal(currentBudget), num(currentBudget.paid)), true);
       renderItems();
     }
@@ -450,6 +484,7 @@
         const total=budgetTotal(b),paid=num(b.paid),balance=Math.max(0,total-paid),status=b.paymentStatus||calculatedPaymentStatus(total,paid);
         const card=makeElement('div','history-card'),title=makeElement('div','card-title');title.appendChild(makeElement('span','',b.client||'Cliente não informado'));title.appendChild(makeElement('span','badge',b.id||'Sem número'));card.appendChild(title);
         card.appendChild(makeElement('div','item-cat',`Data: ${b.date||'-'} • ${b.phone||'Sem telefone'}`));
+        if(b.scheduleDate){const scheduleInfo=formatScheduleLabel(b);card.appendChild(makeElement('div','schedule-chip','📅 '+scheduleInfo));}
         card.appendChild(makeElement('div','item-details',`${(b.items||[]).length} item(ns) • Total: ${money(total)}`));
         const statusRow=makeElement('div','item-details');statusRow.appendChild(makeElement('span','status-badge status-'+status.toLowerCase(),status==='Pago'?'🟢 Pago':status==='Parcial'?'🟡 Parcial':'🔴 Pendente'));statusRow.appendChild(makeElement('strong','',`Restante: ${money(balance)}`));card.appendChild(statusRow);
         const actions=makeElement('div','history-actions-extended');
@@ -460,6 +495,22 @@
         actions.append(edit,pdf,pix,del);card.appendChild(actions);container.appendChild(card);
       });
     }
+    function dateFromISO(value){if(!value)return null;const [y,m,d]=value.split('-').map(Number);return new Date(y,m-1,d);}
+    function isoLocal(date){const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');return `${y}-${m}-${d}`;}
+    function minutesToLabel(minutes){const h=Math.floor(minutes/60),m=minutes%60;return h&&m?`${h}h${String(m).padStart(2,'0')}`:h?`${h}h`:`${m}min`;}
+    function timeToMinutes(value){if(!value)return 0;const [h,m]=value.split(':').map(Number);return h*60+m;}
+    function endTimeLabel(time,duration){if(!time)return '';const total=timeToMinutes(time)+(Number(duration)||0),h=Math.floor(total/60)%24,m=total%60;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
+    function formatScheduleLabel(b){const date=dateFromISO(b.scheduleDate),dateText=date?date.toLocaleDateString('pt-BR'):'',end=endTimeLabel(b.scheduleTime,b.scheduleDuration);return `${dateText}${b.scheduleTime?' • '+b.scheduleTime+(end?' às '+end:''):''} • ${minutesToLabel(Number(b.scheduleDuration)||0)}`;}
+    function scheduledBudgets(){return budgetHistory.filter(b=>b.scheduleDate&&b.scheduleTime&&b.scheduleStatus!=='Cancelado');}
+    function detectScheduleConflicts(candidate){if(!candidate.scheduleDate||!candidate.scheduleTime)return [];const start=timeToMinutes(candidate.scheduleTime),end=start+(Number(candidate.scheduleDuration)||60);return scheduledBudgets().filter(b=>b.id!==candidate.id&&b.scheduleDate===candidate.scheduleDate).filter(b=>{const bs=timeToMinutes(b.scheduleTime),be=bs+(Number(b.scheduleDuration)||60);return start<be&&end>bs;});}
+    function updateSchedulePreview(){const date=document.getElementById('schedule-date')?.value,time=document.getElementById('schedule-time')?.value,duration=Number(document.getElementById('schedule-duration')?.value)||60,preview=document.getElementById('schedule-end-preview'),warning=document.getElementById('schedule-conflict');if(preview)preview.textContent=time?`${time} às ${endTimeLabel(time,duration)} • ${minutesToLabel(duration)}`:'Sem horário';const candidate={id:currentBudget.id,scheduleDate:date,scheduleTime:time,scheduleDuration:duration};const conflicts=detectScheduleConflicts(candidate);if(warning){warning.style.display=conflicts.length?'block':'none';warning.textContent=conflicts.length?`⚠️ Conflito com ${conflicts.map(b=>`${b.client||b.id} (${b.scheduleTime})`).join(', ')}`:'';}}
+    function changeAgendaMonth(delta){agendaMonth=new Date(agendaMonth.getFullYear(),agendaMonth.getMonth()+delta,1);renderAgenda();}
+    function setAgendaFilter(filter){agendaFilter=filter;['selected','today','week'].forEach(x=>document.getElementById('agenda-filter-'+x)?.classList.toggle('active',x===filter));renderAgendaList();}
+    function selectAgendaDate(value){agendaSelectedDate=value;agendaFilter='selected';['selected','today','week'].forEach(x=>document.getElementById('agenda-filter-'+x)?.classList.toggle('active',x==='selected'));renderAgenda();}
+    function agendaFilteredItems(){const all=scheduledBudgets().sort((a,b)=>(a.scheduleDate+a.scheduleTime).localeCompare(b.scheduleDate+b.scheduleTime)),today=isoLocal(new Date());if(agendaFilter==='today')return all.filter(b=>b.scheduleDate===today);if(agendaFilter==='week'){const end=new Date();end.setDate(end.getDate()+6);return all.filter(b=>b.scheduleDate>=today&&b.scheduleDate<=isoLocal(end));}return all.filter(b=>b.scheduleDate===agendaSelectedDate);}
+    function renderAgenda(){const label=document.getElementById('agenda-month-label'),grid=document.getElementById('agenda-calendar');if(!label||!grid)return;label.textContent=agendaMonth.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});grid.replaceChildren();['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(x=>grid.appendChild(makeElement('div','calendar-weekday',x)));const first=new Date(agendaMonth.getFullYear(),agendaMonth.getMonth(),1),start=new Date(first);start.setDate(1-first.getDay());const today=isoLocal(new Date()),all=scheduledBudgets();for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=isoLocal(day),count=all.filter(b=>b.scheduleDate===iso).length,button=makeElement('button','calendar-day','');button.type='button';if(day.getMonth()!==agendaMonth.getMonth())button.classList.add('other');if(iso===today)button.classList.add('today');if(iso===agendaSelectedDate)button.classList.add('selected');if(count)button.classList.add('has-events');button.appendChild(makeElement('span','day-number',String(day.getDate())));if(count)button.appendChild(makeElement('span','day-count',`${count} atendimento${count>1?'s':''}`));button.onclick=()=>selectAgendaDate(iso);grid.appendChild(button);}const monthItems=all.filter(b=>{const d=dateFromISO(b.scheduleDate);return d&&d.getFullYear()===agendaMonth.getFullYear()&&d.getMonth()===agendaMonth.getMonth();});document.getElementById('agenda-count').textContent=monthItems.length;document.getElementById('agenda-hours').textContent=minutesToLabel(monthItems.reduce((sum,b)=>sum+(Number(b.scheduleDuration)||0),0));document.getElementById('agenda-today-count').textContent=all.filter(b=>b.scheduleDate===today).length;renderAgendaList();}
+    function renderAgendaList(){const box=document.getElementById('agenda-list');if(!box)return;const items=agendaFilteredItems();box.replaceChildren();const titles={selected:dateFromISO(agendaSelectedDate)?.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})||'Dia selecionado',today:'Atendimentos de hoje',week:'Próximos 7 dias'};document.getElementById('agenda-list-title').textContent=titles[agendaFilter];document.getElementById('agenda-list-total').textContent=`${items.length} • ${minutesToLabel(items.reduce((sum,b)=>sum+(Number(b.scheduleDuration)||0),0))}`;if(!items.length){box.appendChild(makeElement('div','empty','Nenhum atendimento neste período.'));return;}items.forEach(b=>{const card=makeElement('div','appointment-card');if(b.scheduleStatus==='Concluído')card.classList.add('completed');if(b.scheduleStatus==='Cancelado')card.classList.add('cancelled');const end=endTimeLabel(b.scheduleTime,b.scheduleDuration);card.appendChild(makeElement('div','appointment-time',`${b.scheduleTime} às ${end} • ${minutesToLabel(Number(b.scheduleDuration)||0)}`));card.appendChild(makeElement('div','appointment-client',b.client||'Cliente não informado'));card.appendChild(makeElement('div','appointment-meta',`${b.scheduleDate.split('-').reverse().join('/')} • ${b.scheduleStatus||'Agendado'}${b.address?' • '+b.address:''}`));const services=(b.items||[]).map(i=>i.desc).join(', ');if(services)card.appendChild(makeElement('div','appointment-meta',services));if(b.scheduleNotes)card.appendChild(makeElement('div','appointment-meta','📝 '+b.scheduleNotes));const conflicts=detectScheduleConflicts(b);if(conflicts.length)card.appendChild(makeElement('div','conflict-warning',`⚠️ Horário sobreposto com ${conflicts.map(x=>x.client||x.id).join(', ')}`));const actions=makeElement('div','appointment-actions'),open=makeElement('button','appointment-open','Abrir'),wa=makeElement('button','appointment-whatsapp','WhatsApp'),done=makeElement('button','appointment-done',b.scheduleStatus==='Concluído'?'Concluído ✓':'Concluir');open.onclick=()=>editBudget(b.id);wa.onclick=()=>openWhatsApp(`Olá, ${b.client||''}! Confirmando seu atendimento da CRICORREA para ${b.scheduleDate.split('-').reverse().join('/')} às ${b.scheduleTime}.`,b.phone);done.onclick=()=>completeAppointment(b.id);actions.append(open,wa,done);card.appendChild(actions);box.appendChild(card);});}
+    function completeAppointment(id){const index=budgetHistory.findIndex(b=>b.id===id);if(index<0)return;budgetHistory[index].scheduleStatus='Concluído';if(currentBudget.id===id)currentBudget.scheduleStatus='Concluído';localStorage.setItem(STORAGE_KEY,JSON.stringify(budgetHistory));if(window.cricorreaCloud)window.cricorreaCloud.saveBudget(budgetHistory[index]).catch(console.error);renderAgenda();}
     function buildWhatsAppMessage() {
       syncFormToBudget();
       const total = budgetTotal(currentBudget);
@@ -762,7 +813,7 @@
     function addExpense(){const desc=document.getElementById('expense-desc').value.trim(),value=num(document.getElementById('expense-value').value);if(!desc||value<=0)return alert('Informe descrição e valor.');const expense={id:Date.now(),desc,category:document.getElementById('expense-category').value,date:document.getElementById('expense-date').value,value};expenses.unshift(expense);localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));if(window.cricorreaCloud)window.cricorreaCloud.saveExpense(expense).catch(console.error);autoCloudBackup();document.getElementById('expense-desc').value='';document.getElementById('expense-value').value='';renderDashboard();}
     function deleteExpense(id){if(confirm('Excluir este gasto?')){expenses=expenses.filter(x=>x.id!==id);localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));if(window.cricorreaCloud)window.cricorreaCloud.deleteExpense(id).catch(console.error);autoCloudBackup();renderDashboard();}}
     function renderDashboard(){const[a,b]=periodRange(),bs=budgetHistory.filter(x=>inPeriod(x.date,a,b)),es=expenses.filter(x=>inPeriod(x.date,a,b));document.getElementById('dash-period-label').textContent=a.toLocaleDateString('pt-BR')+' a '+b.toLocaleDateString('pt-BR');const sales=bs.reduce((s,x)=>s+budgetValue(x),0),received=bs.reduce((s,x)=>s+num(x.paid),0),mat=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type==='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),svc=bs.reduce((s,x)=>s+(x.items||[]).filter(i=>i.type!=='Material').reduce((z,i)=>z+num(i.cost)*num(i.qty),0),0),cats={};es.forEach(x=>cats[x.category]=(cats[x.category]||0)+num(x.value));cats['Materiais dos orçamentos']=(cats['Materiais dos orçamentos']||0)+mat;cats['Custos dos serviços']=(cats['Custos dos serviços']||0)+svc;const costs=Object.values(cats).reduce((s,x)=>s+x,0),profit=received-costs;document.getElementById('dash-sales').textContent=money(sales);document.getElementById('dash-received').textContent=money(received);document.getElementById('dash-pending').textContent=money(Math.max(0,sales-received));document.getElementById('dash-paid-count').textContent=bs.filter(x=>calculatedPaymentStatus(budgetValue(x),num(x.paid))==='Pago').length+' / '+bs.length;document.getElementById('dash-costs').textContent=money(costs);document.getElementById('dash-profit').textContent=money(profit);const max=Math.max(1,...Object.values(cats));document.getElementById('dash-breakdown').innerHTML=Object.entries(cats).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="break-row"><div class="break-head"><span>${k}</span><strong>${money(v)}</strong></div><div class="break-bar"><span style="width:${v/max*100}%"></span></div></div>`).join('')||'<div class="empty">Sem gastos no período.</div>';document.getElementById('expense-list').innerHTML=es.map(x=>`<div class="expense-row"><strong>${x.desc}</strong><small>${x.category} • ${parsePtDate(x.date).toLocaleDateString('pt-BR')} • ${money(x.value)}</small><button class="mini-delete" onclick="deleteExpense(${x.id})">🗑️</button></div>`).join('')||'<div class="empty">Nenhum gasto avulso no período.</div>';}
-    function backupPayload(){return{app:'CRICORREA Orçamentos',version:4,budgets:budgetHistory,expenses,exportedAt:new Date().toISOString()};}
+    function backupPayload(){return{app:'CRICORREA Orçamentos',version:11,budgets:budgetHistory,expenses,exportedAt:new Date().toISOString()};}
     function exportBackup(){const blob=new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cricorrea-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);}
     function openBackupDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('cricorrea-cloud-backup',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('handles'))r.result.createObjectStore('handles')};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
     async function saveFolderHandle(h){const db=await openBackupDB();return new Promise((resolve,reject)=>{const tx=db.transaction('handles','readwrite');tx.objectStore('handles').put(h,'googleDriveFolder');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
@@ -784,7 +835,7 @@
       getBudgets:()=>JSON.parse(JSON.stringify(budgetHistory)),
       getExpenses:()=>JSON.parse(JSON.stringify(expenses)),
       getPix:()=>JSON.parse(JSON.stringify(pixSettings)),
-      applyBudgets:list=>{budgetHistory=Array.isArray(list)?list:[];localStorage.setItem(STORAGE_KEY,JSON.stringify(budgetHistory));renderHistory();if(document.getElementById('tab-dashboard')?.style.display!=='none')renderDashboard();},
+      applyBudgets:list=>{budgetHistory=Array.isArray(list)?list:[];localStorage.setItem(STORAGE_KEY,JSON.stringify(budgetHistory));renderHistory();if(document.getElementById('tab-dashboard')?.style.display!=='none')renderDashboard();if(document.getElementById('tab-agenda')?.style.display!=='none')renderAgenda();},
       applyExpenses:list=>{expenses=Array.isArray(list)?list:[];localStorage.setItem(EXPENSE_KEY,JSON.stringify(expenses));if(document.getElementById('tab-dashboard')?.style.display!=='none')renderDashboard();},
       applyPix:value=>{if(value){pixSettings=value;localStorage.setItem(PIX_KEY,JSON.stringify(pixSettings));loadPixSettings();}},
       setSync:text=>{const e=document.getElementById('sync-status');if(e)e.textContent=text;}
